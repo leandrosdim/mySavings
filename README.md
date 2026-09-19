@@ -1,0 +1,59 @@
+# mySavings
+
+Private, mobile-first personal finance PWA replacing a monthly Excel workbook.
+Built with Next.js App Router + TypeScript. Currently at the **Step01 foundation
+stage only**: a runnable Next.js app with a Greek, mobile-first landing screen.
+Database, authentication, business logic, PWA install and deployment are not
+yet implemented (see roadmap in `steps/README.md`).
+
+## Confirmed rules (summary)
+
+- EUR exact cents; no floating-point financial arithmetic. Server-side validation.
+- Raw parameterized PostgreSQL via `pg`; no ORM. Explicit transactions for writes.
+- Every read/write is scoped to the verified server session owner. No shared views,
+  impersonation or cross-user access. DB operators technically retain access;
+  end-to-end encryption is not promised.
+- Current bank balances are manually refreshed; replacing a balance is an audited
+  adjustment, not an income/payment or change to historical snapshots.
+- Planned expense amounts are preserved. Multiple partial payments stored;
+  remaining = planned minus non-reversed settlements. Overpayments rejected in v1.
+- Reserved funds are outstanding commitments (e.g. taxes), additional to protected
+  savings. Protected once, carried forward until settled/released.
+- Internal transfers are not income/expenses. Corrections/reversals retain history.
+- Closed-month snapshots are immutable.
+
+Full financial rules and acceptance scenarios: `docs/financial-rules.md`.
+
+## Requirements
+
+- Node.js 22.x (project engine). Local tested on Node 22.21.1, npm 11.12.1.
+- Greek UI (`el`), English code/docs. No external font/asset fetch in Step01.
+
+## Local commands
+
+```bash
+npm install        # install dependencies (creates package-lock.json)
+npm run dev        # start dev server at http://localhost:3000
+npm run build      # production build (no DB/secrets needed)
+npm run start      # serve the production build
+npm run lint       # eslint .
+npm run typecheck   # next typegen && tsc --noEmit
+npm audit          # inspect advisories; do NOT run npm audit fix --force
+```
+
+If you already have a private `.env` (created later), keep it; never overwrite an
+existing `.env`. New credentials belong in your private `.env`, not in git.
+
+## Roadmap
+
+Approval-gated roadmap lives in `steps/README.md`. Only Step01 is authorized.
+Each gate: Hermes review → saved prompt → OpenCode implementation → independent
+verification → user approval. No automatic continuation.
+
+## Scope notes (honest current state)
+
+- Next.js foundation only. No database, auth, PWA service worker, or deployment.
+- Neon PostgreSQL connection is needed at Step03. Vercel/Neon resources and
+  production credentials are provisioned later with explicit approval.
+- Users are separate and private; the auth method is chosen at Step04.
+- No real workbook data is copied into source, fixtures or git.
