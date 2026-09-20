@@ -46,9 +46,15 @@ existing `.env`. New credentials belong in your private `.env`, not in git.
 
 ## Roadmap
 
-Approval-gated roadmap lives in `steps/README.md`. Only Step01 is authorized.
-Each gate: Hermes review → saved prompt → OpenCode implementation → independent
-verification → user approval. No automatic continuation.
+All 18 steps are written as ready-to-run prompts in `steps/Step01.md` through
+`steps/Step18.md`, with identical execution copies in `prompts/` and a machine-readable
+`steps/registry.json`. Start with the ordered register in `steps/README.md`.
+Step01 is independently verified; later steps are registered, not implemented.
+Each gate: user approval → Hermes current-code/prerequisite review → OpenCode
+GLM 5.2 execution → independent verification → report and stop. Prompt preparation
+does not authorize execution, deployment or a push. The original executed Step01
+prompt is preserved in `prompts/archive/`; its current prompt is verification-only
+by default.
 
 ## Scope notes (honest current state)
 

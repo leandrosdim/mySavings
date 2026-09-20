@@ -1,0 +1,202 @@
+{
+  "project": "mySavings",
+  "execution_policy": "one approved step, independent verification, stop",
+  "steps": [
+    {
+      "id": "Step01",
+      "title": "Stable Next.js foundation",
+      "status": "verified",
+      "canonical": "steps/Step01.md",
+      "prompt": "prompts/Step01-opencode-glm52.md",
+      "depends_on": [],
+      "model": "ollama-cloud/glm-5.2"
+    },
+    {
+      "id": "Step02",
+      "title": "Financial calculation core and tests",
+      "status": "registered",
+      "canonical": "steps/Step02.md",
+      "prompt": "prompts/Step02-opencode-glm52.md",
+      "depends_on": [
+        "Step01"
+      ],
+      "model": "ollama-cloud/glm-5.2"
+    },
+    {
+      "id": "Step03",
+      "title": "Neon connection and migrations infrastructure",
+      "status": "registered",
+      "canonical": "steps/Step03.md",
+      "prompt": "prompts/Step03-opencode-glm52.md",
+      "depends_on": [
+        "Step02"
+      ],
+      "model": "ollama-cloud/glm-5.2"
+    },
+    {
+      "id": "Step04",
+      "title": "Private authentication and identity",
+      "status": "registered",
+      "canonical": "steps/Step04.md",
+      "prompt": "prompts/Step04-opencode-glm52.md",
+      "depends_on": [
+        "Step03"
+      ],
+      "model": "ollama-cloud/glm-5.2"
+    },
+    {
+      "id": "Step05",
+      "title": "Owner-scoped financial schema",
+      "status": "registered",
+      "canonical": "steps/Step05.md",
+      "prompt": "prompts/Step05-opencode-glm52.md",
+      "depends_on": [
+        "Step04"
+      ],
+      "model": "ollama-cloud/glm-5.2"
+    },
+    {
+      "id": "Step06",
+      "title": "Account balances and adjustments backend",
+      "status": "registered",
+      "canonical": "steps/Step06.md",
+      "prompt": "prompts/Step06-opencode-glm52.md",
+      "depends_on": [
+        "Step05"
+      ],
+      "model": "ollama-cloud/glm-5.2"
+    },
+    {
+      "id": "Step07",
+      "title": "Mobile shell and account screens",
+      "status": "registered",
+      "canonical": "steps/Step07.md",
+      "prompt": "prompts/Step07-opencode-glm52.md",
+      "depends_on": [
+        "Step06"
+      ],
+      "model": "ollama-cloud/glm-5.2"
+    },
+    {
+      "id": "Step08",
+      "title": "Monthly plans and recurring templates",
+      "status": "registered",
+      "canonical": "steps/Step08.md",
+      "prompt": "prompts/Step08-opencode-glm52.md",
+      "depends_on": [
+        "Step07"
+      ],
+      "model": "ollama-cloud/glm-5.2"
+    },
+    {
+      "id": "Step09",
+      "title": "Expense plans and income expectations",
+      "status": "registered",
+      "canonical": "steps/Step09.md",
+      "prompt": "prompts/Step09-opencode-glm52.md",
+      "depends_on": [
+        "Step08"
+      ],
+      "model": "ollama-cloud/glm-5.2"
+    },
+    {
+      "id": "Step10",
+      "title": "Partial payments and receipts engine",
+      "status": "registered",
+      "canonical": "steps/Step10.md",
+      "prompt": "prompts/Step10-opencode-glm52.md",
+      "depends_on": [
+        "Step09"
+      ],
+      "model": "ollama-cloud/glm-5.2"
+    },
+    {
+      "id": "Step11",
+      "title": "Mobile settlement and reconciliation UX",
+      "status": "registered",
+      "canonical": "steps/Step11.md",
+      "prompt": "prompts/Step11-opencode-glm52.md",
+      "depends_on": [
+        "Step10"
+      ],
+      "model": "ollama-cloud/glm-5.2"
+    },
+    {
+      "id": "Step12",
+      "title": "Reserved commitments and tax money",
+      "status": "registered",
+      "canonical": "steps/Step12.md",
+      "prompt": "prompts/Step12-opencode-glm52.md",
+      "depends_on": [
+        "Step11"
+      ],
+      "model": "ollama-cloud/glm-5.2"
+    },
+    {
+      "id": "Step13",
+      "title": "Savings-first overview and forecast",
+      "status": "registered",
+      "canonical": "steps/Step13.md",
+      "prompt": "prompts/Step13-opencode-glm52.md",
+      "depends_on": [
+        "Step12"
+      ],
+      "model": "ollama-cloud/glm-5.2"
+    },
+    {
+      "id": "Step14",
+      "title": "Month rollover preview and apply",
+      "status": "registered",
+      "canonical": "steps/Step14.md",
+      "prompt": "prompts/Step14-opencode-glm52.md",
+      "depends_on": [
+        "Step13"
+      ],
+      "model": "ollama-cloud/glm-5.2"
+    },
+    {
+      "id": "Step15",
+      "title": "Month closing, history and private exports",
+      "status": "registered",
+      "canonical": "steps/Step15.md",
+      "prompt": "prompts/Step15-opencode-glm52.md",
+      "depends_on": [
+        "Step14"
+      ],
+      "model": "ollama-cloud/glm-5.2"
+    },
+    {
+      "id": "Step16",
+      "title": "Installable privacy-safe PWA",
+      "status": "registered",
+      "canonical": "steps/Step16.md",
+      "prompt": "prompts/Step16-opencode-glm52.md",
+      "depends_on": [
+        "Step15"
+      ],
+      "model": "ollama-cloud/glm-5.2"
+    },
+    {
+      "id": "Step17",
+      "title": "Security, isolation and mobile acceptance",
+      "status": "registered",
+      "canonical": "steps/Step17.md",
+      "prompt": "prompts/Step17-opencode-glm52.md",
+      "depends_on": [
+        "Step16"
+      ],
+      "model": "ollama-cloud/glm-5.2"
+    },
+    {
+      "id": "Step18",
+      "title": "Vercel deployment and production smoke",
+      "status": "registered",
+      "canonical": "steps/Step18.md",
+      "prompt": "prompts/Step18-opencode-glm52.md",
+      "depends_on": [
+        "Step17"
+      ],
+      "model": "ollama-cloud/glm-5.2"
+    }
+  ]
+}

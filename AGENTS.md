@@ -5,7 +5,8 @@ Private mobile-first personal finance PWA replacing a monthly Excel workbook. Ne
 Each user has fully private finances. No shared dashboard, impersonation or app-admin access to another user's finances. DB operators technically retain access; do not promise end-to-end encryption.
 
 ## Execution contract
-- Hermes reviews exactly one steps/StepNN.md and prerequisites, then writes prompts/StepNN-opencode-glm52.md with detailed implementation/verification instructions.
+- All 18 steps are registered as complete execution prompts in steps/StepNN.md, with identical copies in prompts/StepNN-opencode-glm52.md and an ordered steps/registry.json register. Prepared does not mean approved or implemented.
+- Before each run, Hermes reviews exactly one registered prompt against current code, prerequisites and the previous independent review. Amend stale assumptions in both copies before launch; unresolved credentials/decisions are explicit blockers. Step01 is complete and its current prompt defaults to verification-only; preserve the originally executed prompt in prompts/archive/.
 - Run `opencode run --agent build --model ollama-cloud/glm-5.2` from this root. No model substitution without user approval.
 - OpenCode implements only that step and stops. Hermes independently reviews files, reruns checks/browser/DB tests, records docs/reviews/StepNN.md, and reports.
 - Wait for explicit user approval before the next step. Split oversized steps. Never mark untested work complete.
