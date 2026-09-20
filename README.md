@@ -1,10 +1,10 @@
 # mySavings
 
 Private, mobile-first personal finance PWA replacing a monthly Excel workbook.
-Built with Next.js App Router + TypeScript. Currently at the **Step01 foundation
-stage only**: a runnable Next.js app with a Greek, mobile-first landing screen.
-Database, authentication, business logic, PWA install and deployment are not
-yet implemented (see roadmap in `steps/README.md`).
+Built with Next.js App Router + TypeScript. **Step01 and Step02 independently verified**:
+a runnable Greek mobile-first foundation and a tested pure financial calculation core.
+Database integration, authentication, persisted payments, PWA install and deployment
+are not yet implemented (see `steps/README.md`). API contracts: `docs/finance-api.md`.
 
 ## Confirmed rules (summary)
 
@@ -38,10 +38,12 @@ npm run build      # production build (no DB/secrets needed)
 npm run start      # serve the production build
 npm run lint       # eslint .
 npm run typecheck   # next typegen && tsc --noEmit
+npm test           # deterministic financial unit/regression tests
+npm run test:watch # interactive Vitest watch mode
 npm audit          # inspect advisories; do NOT run npm audit fix --force
 ```
 
-If you already have a private `.env` (created later), keep it; never overwrite an
+If you already have a private `.env`, keep it; never overwrite an
 existing `.env`. New credentials belong in your private `.env`, not in git.
 
 ## Roadmap
@@ -49,7 +51,7 @@ existing `.env`. New credentials belong in your private `.env`, not in git.
 All 18 steps are written as ready-to-run prompts in `steps/Step01.md` through
 `steps/Step18.md`, with identical execution copies in `prompts/` and a machine-readable
 `steps/registry.json`. Start with the ordered register in `steps/README.md`.
-Step01 is independently verified; later steps are registered, not implemented.
+Step01 and Step02 are independently verified; Step03–Step18 are registered, not implemented.
 Each gate: user approval → Hermes current-code/prerequisite review → OpenCode
 GLM 5.2 execution → independent verification → report and stop. Prompt preparation
 does not authorize execution, deployment or a push. The original executed Step01
@@ -58,8 +60,7 @@ by default.
 
 ## Scope notes (honest current state)
 
-- Next.js foundation only. No database, auth, PWA service worker, or deployment.
-- Neon PostgreSQL connection is needed at Step03. Vercel/Neon resources and
-  production credentials are provisioned later with explicit approval.
+- Next.js foundation plus pure finance helpers and 129 passing tests. No connected database, auth, PWA service worker or deployment.
+- Real Neon URL supplied privately in .env; not used in Step02. Confirm the database/branch and development/test scope before Step03. Production changes require separate approval.
 - Users are separate and private; the auth method is chosen at Step04.
 - No real workbook data is copied into source, fixtures or git.

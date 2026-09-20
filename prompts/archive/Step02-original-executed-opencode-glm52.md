@@ -3,7 +3,7 @@
 ## Prompt registration
 Project: `/home/leandrosdim777/projects/mySavings`
 Model: `ollama-cloud/glm-5.2`
-Status: Completed and independently verified; see docs/reviews/Step02.md. Default rerun is verification-only; do not rewrite the completed core or advance to Step03 without explicit approval.
+Status: Registered prompt; NOT IMPLEMENTED. Requires explicit approval and satisfied prerequisites before execution.
 Mode: Execute only the bounded approved scope below.
 This entire file is a ready-to-run prompt, not merely a feature outline. Saving it does not authorize execution. `steps/Step02.md` is canonical; `prompts/Step02-opencode-glm52.md` is its identical execution copy. Keep both synchronized after any preflight amendment.
 
