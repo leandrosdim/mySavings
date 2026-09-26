@@ -11,17 +11,26 @@
     "build": "next build",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest --watch"
+    "test": "DB_TEST_ALLOW_WRITES= vitest run",
+    "test:watch": "DB_TEST_ALLOW_WRITES= vitest --watch",
+    "test:db": "node scripts/require-db-test-env.mjs && vitest run --config vitest.db.config.mts",
+    "db:migrate": "node db/migrations.js",
+    "db:check": "node scripts/db-check.mjs",
+    "auth:provision": "node scripts/provision-user.mjs"
   },
   "dependencies": {
+    "@node-rs/argon2": "2.2.1",
+    "iron-session": "9.0.1",
     "next": "16.3.5",
+    "pg": "8.23.0",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "server-only": "0.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "22.20.4",
+    "@types/pg": "8.11.10",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "eslint": "9.39.5",

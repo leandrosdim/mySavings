@@ -25,7 +25,7 @@
     {
       "id": "Step03",
       "title": "Neon connection and migrations infrastructure",
-      "status": "registered",
+      "status": "verified",
       "canonical": "steps/Step03.md",
       "prompt": "prompts/Step03-opencode-glm52.md",
       "depends_on": [
@@ -36,7 +36,7 @@
     {
       "id": "Step04",
       "title": "Private authentication and identity",
-      "status": "registered",
+      "status": "verified",
       "canonical": "steps/Step04.md",
       "prompt": "prompts/Step04-opencode-glm52.md",
       "depends_on": [

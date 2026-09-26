@@ -1,6 +1,6 @@
 # mySavings — registered execution prompts
 
-All 18 steps are written as ready-to-run prompts. Preparation is complete; implementation is NOT. Step01 and Step02 are independently verified; Step03–Step18 remain unexecuted.
+All 18 steps are written as ready-to-run prompts. Preparation is complete; implementation is NOT. Step01–Step04 are independently verified. Step05–Step18 remain unexecuted.
 
 ## How execution works
 1. User approves one step.
@@ -14,8 +14,8 @@ Canonical files are steps/StepNN.md. Identical execution copies are prompts/Step
 ## Ordered register
 - [Step01: Stable Next.js foundation](Step01.md) — completed / independently verified. [Execution copy](../prompts/Step01-opencode-glm52.md).
 - [Step02: Financial calculation core and tests](Step02.md) — completed / independently verified; see ../docs/reviews/Step02.md. [Execution copy](../prompts/Step02-opencode-glm52.md).
-- [Step03: Neon connection and migrations infrastructure](Step03.md) — registered / awaiting approval and prerequisites. [Execution copy](../prompts/Step03-opencode-glm52.md).
-- [Step04: Private authentication and identity](Step04.md) — registered / awaiting approval and prerequisites. [Execution copy](../prompts/Step04-opencode-glm52.md).
+- [Step03: Neon connection and migrations infrastructure](Step03.md) — independently verified after atomicity corrections; see ../docs/reviews/Step03.md. [Execution copy](../prompts/Step03-opencode-glm52.md).
+- [Step04: Private authentication and identity](Step04.md) — independently verified after security remediation and real-browser re-QA; see ../docs/reviews/Step04.md. [Execution copy](../prompts/Step04-opencode-glm52.md).
 - [Step05: Owner-scoped financial schema](Step05.md) — registered / awaiting approval and prerequisites. [Execution copy](../prompts/Step05-opencode-glm52.md).
 - [Step06: Account balances and adjustments backend](Step06.md) — registered / awaiting approval and prerequisites. [Execution copy](../prompts/Step06-opencode-glm52.md).
 - [Step07: Mobile shell and account screens](Step07.md) — registered / awaiting approval and prerequisites. [Execution copy](../prompts/Step07-opencode-glm52.md).
