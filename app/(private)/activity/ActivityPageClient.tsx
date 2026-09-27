@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useId, useMemo } from "react";
+import { useState, useId, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { MonthlyPlan } from "@/lib/months/types";
 import type { Obligation, ObligationKind } from "@/lib/obligations/types";
 import type { IncomeExpectation } from "@/lib/income/types";
 import type { Account } from "@/lib/accounts/types";
+import type {
+  SettlementHistoryEntry,
+  ReceiptHistoryEntry,
+} from "@/lib/settlements/types";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Field } from "@/components/ui/Field";
@@ -22,6 +26,14 @@ import {
   updateIncomeApi,
   cancelIncomeApi,
 } from "@/lib/ui/activity-api";
+import {
+  listSettlementHistoryApi,
+  listReceiptHistoryApi,
+} from "@/lib/ui/settlements-api";
+import { PaymentSheet } from "@/components/settlements/PaymentSheet";
+import { ReceiptSheet } from "@/components/settlements/ReceiptSheet";
+import { ReversalSheet } from "@/components/settlements/ReversalSheet";
+import { SettlementHistory } from "@/components/settlements/SettlementHistory";
 
 type ActivityPageClientProps = {
   currentMonth: string;
@@ -81,6 +93,21 @@ export function ActivityPageClient({
   const [detailItem, setDetailItem] = useState<
     | { type: "obligation"; data: Obligation }
     | { type: "income"; data: IncomeExpectation }
+    | null
+  >(null);
+  const [showPayment, setShowPayment] = useState(false);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [reversalTarget, setReversalTarget] = useState<
+    | {
+        kind: "settlement";
+        entry: SettlementHistoryEntry;
+        obligationTitle: string;
+      }
+    | {
+        kind: "receipt";
+        entry: ReceiptHistoryEntry;
+        incomeSourceName: string;
+      }
     | null
   >(null);
 
@@ -397,23 +424,99 @@ export function ActivityPageClient({
       {detailItem?.type === "obligation" ? (
         <ObligationDetailSheet
           obligation={detailItem.data}
+          accounts={activeAccounts}
           onClose={() => setDetailItem(null)}
           onEdit={() => handleEditObligation(detailItem.data)}
           onCanceled={() => {
             refresh();
             setDetailItem(null);
           }}
+          onPay={() => setShowPayment(true)}
+          onReverse={(entry) =>
+            setReversalTarget({
+              kind: "settlement",
+              entry,
+              obligationTitle: detailItem.data.title,
+            })
+          }
         />
       ) : detailItem?.type === "income" ? (
         <IncomeDetailSheet
           income={detailItem.data}
+          accounts={activeAccounts}
           onClose={() => setDetailItem(null)}
           onEdit={() => handleEditIncome(detailItem.data)}
           onCanceled={() => {
             refresh();
             setDetailItem(null);
           }}
+          onReceive={() => setShowReceipt(true)}
+          onReverse={(entry) =>
+            setReversalTarget({
+              kind: "receipt",
+              entry,
+              incomeSourceName: detailItem.data.sourceName,
+            })
+          }
         />
+      ) : null}
+
+      {detailItem?.type === "obligation" && showPayment ? (
+        <PaymentSheet
+          open={showPayment}
+          onClose={() => setShowPayment(false)}
+          obligation={detailItem.data}
+          accounts={activeAccounts}
+          onPaid={() => {
+            refresh();
+            setShowPayment(false);
+            setDetailItem(null);
+          }}
+        />
+      ) : null}
+
+      {detailItem?.type === "income" && showReceipt ? (
+        <ReceiptSheet
+          open={showReceipt}
+          onClose={() => setShowReceipt(false)}
+          income={detailItem.data}
+          accounts={activeAccounts}
+          onReceived={() => {
+            refresh();
+            setShowReceipt(false);
+            setDetailItem(null);
+          }}
+        />
+      ) : null}
+
+      {reversalTarget ? (
+        reversalTarget.kind === "settlement" ? (
+          <ReversalSheet
+            open={true}
+            kind="settlement"
+            entry={reversalTarget.entry}
+            obligationTitle={reversalTarget.obligationTitle}
+            onClose={() => setReversalTarget(null)}
+            onReversed={() => {
+              refresh();
+              setReversalTarget(null);
+              setDetailItem(null);
+            }}
+          />
+        ) : (
+          <ReversalSheet
+            open={true}
+            kind="receipt"
+            entry={reversalTarget.entry}
+            incomeSourceName={reversalTarget.incomeSourceName}
+            onClose={() => setReversalTarget(null)}
+            onReversed={() => {
+              refresh();
+              setReversalTarget(null);
+              setDetailItem(null);
+            }}
+          />
+        )
       ) : null}
     </>
   );
@@ -934,17 +1037,43 @@ function IncomeFormSheet({
 
 function ObligationDetailSheet({
   obligation,
+  accounts,
   onClose,
   onEdit,
   onCanceled,
+  onPay,
+  onReverse,
 }: {
   obligation: Obligation;
+  accounts: Account[];
   onClose: () => void;
   onEdit: () => void;
   onCanceled: () => void;
+  onPay: () => void;
+  onReverse: (entry: SettlementHistoryEntry) => void;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [history, setHistory] = useState<SettlementHistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    listSettlementHistoryApi(obligation.id).then((result) => {
+      if (cancelled) return;
+      setHistoryLoading(false);
+      if (result.ok) {
+        setHistory(result.settlements);
+        setHistoryError(null);
+      } else {
+        setHistoryError(result.error);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [obligation.id]);
 
   async function handleCancel() {
     setError(null);
@@ -958,6 +1087,9 @@ function ObligationDetailSheet({
     }
   }
 
+  const canPay =
+    obligation.status !== "cancelled" && obligation.remainingCents > 0;
+
   return (
     <Sheet
       open={true}
@@ -967,6 +1099,15 @@ function ObligationDetailSheet({
         <>
           {obligation.status !== "cancelled" ? (
             <>
+              {canPay ? (
+                <Button
+                  variant="primary"
+                  onClick={onPay}
+                  style={{ width: "100%" }}
+                >
+                  Πληρωμή
+                </Button>
+              ) : null}
               <Button
                 variant="secondary"
                 onClick={onEdit}
@@ -1051,9 +1192,35 @@ function ObligationDetailSheet({
           </div>
         </div>
 
+        <div>
+          <h3
+            style={{
+              fontSize: "0.9rem",
+              fontWeight: 700,
+              margin: "0 0 0.4rem 0",
+              color: "var(--fg)",
+            }}
+          >
+            Ιστορικό πληρωμών
+          </h3>
+          {historyLoading ? (
+            <p style={{ margin: 0, fontSize: "0.88rem", color: "var(--muted)" }}>
+              Φόρτωση…
+            </p>
+          ) : historyError ? (
+            <Alert>{historyError}</Alert>
+          ) : (
+            <SettlementHistory
+              history={history}
+              isIncome={false}
+              onReverse={onReverse}
+            />
+          )}
+        </div>
+
         <Alert tone="info">
           Το σχεδιασμένο ποσό δεν μηδενίζεται με μερικές πληρωμές. Οι
-          πληρωμές θα είναι διαθέσιμες στο επόμενο βήμα.
+          πληρωμές καταγράφονται με ρητή επιλογή ενημέρωσης υπολοίπου.
         </Alert>
 
         {error ? <Alert>{error}</Alert> : null}
@@ -1066,17 +1233,43 @@ function ObligationDetailSheet({
 
 function IncomeDetailSheet({
   income,
+  accounts,
   onClose,
   onEdit,
   onCanceled,
+  onReceive,
+  onReverse,
 }: {
   income: IncomeExpectation;
+  accounts: Account[];
   onClose: () => void;
   onEdit: () => void;
   onCanceled: () => void;
+  onReceive: () => void;
+  onReverse: (entry: ReceiptHistoryEntry) => void;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [history, setHistory] = useState<ReceiptHistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    listReceiptHistoryApi(income.id).then((result) => {
+      if (cancelled) return;
+      setHistoryLoading(false);
+      if (result.ok) {
+        setHistory(result.receipts);
+        setHistoryError(null);
+      } else {
+        setHistoryError(result.error);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [income.id]);
 
   async function handleCancel() {
     setError(null);
@@ -1090,6 +1283,9 @@ function IncomeDetailSheet({
     }
   }
 
+  const canReceive =
+    income.status !== "cancelled" && income.pendingCents > 0;
+
   return (
     <Sheet
       open={true}
@@ -1099,6 +1295,15 @@ function IncomeDetailSheet({
         <>
           {income.status !== "cancelled" ? (
             <>
+              {canReceive ? (
+                <Button
+                  variant="primary"
+                  onClick={onReceive}
+                  style={{ width: "100%" }}
+                >
+                  Είσπραξη
+                </Button>
+              ) : null}
               <Button
                 variant="secondary"
                 onClick={onEdit}
@@ -1173,9 +1378,35 @@ function IncomeDetailSheet({
           </div>
         </div>
 
+        <div>
+          <h3
+            style={{
+              fontSize: "0.9rem",
+              fontWeight: 700,
+              margin: "0 0 0.4rem 0",
+              color: "var(--fg)",
+            }}
+          >
+            Ιστορικό εισπράξεων
+          </h3>
+          {historyLoading ? (
+            <p style={{ margin: 0, fontSize: "0.88rem", color: "var(--muted)" }}>
+              Φόρτωση…
+            </p>
+          ) : historyError ? (
+            <Alert>{historyError}</Alert>
+          ) : (
+            <SettlementHistory
+              history={history}
+              isIncome={true}
+              onReverse={onReverse}
+            />
+          )}
+        </div>
+
         <Alert tone="info">
-          Το έσοδο δείχνει αναμενόμενο, ελημμένο και εκκρεμές. Οι
-          εισπράξεις θα είναι διαθέσιμες στο επόμενο βήμα.
+          Το έσοδο δείχνει αναμενόμενο, ελημμένο και εκκρεμές. Η χειροκίνητη
+          ανανέωση υπολοίπου δεν σημαίνει αυτόματη είσπραξη.
         </Alert>
 
         {error ? <Alert>{error}</Alert> : null}

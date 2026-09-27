@@ -17,6 +17,8 @@ export type {
   ReverseSettlementResult,
   ReverseReceiptInput,
   ReverseReceiptResult,
+  SettlementHistoryEntry,
+  ReceiptHistoryEntry,
   OwnerId,
 } from "./types";
 
@@ -39,6 +41,8 @@ export {
   reverseReceipt,
   getSettlement,
   getReceipt,
+  listSettlementsForObligation,
+  listReceiptsForIncome,
 } from "./service";
 
 export {

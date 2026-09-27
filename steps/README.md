@@ -1,6 +1,6 @@
 # mySavings — registered execution prompts
 
-All 18 steps are written as ready-to-run prompts. Preparation is complete; implementation is NOT. Step01–Step05 are independently verified. Step06–Step10 are implemented (awaiting independent review). Step11–Step18 remain unexecuted.
+All 18 steps are written as ready-to-run prompts. Preparation is complete; implementation is NOT. Step01–Step05 are independently verified. Step06–Step11 are implemented (awaiting independent review). Step12–Step18 remain unexecuted.
 
 ## How execution works
 1. User approves one step.
@@ -22,7 +22,7 @@ Canonical files are steps/StepNN.md. Identical execution copies are prompts/Step
 - [Step08: Monthly plans and recurring templates](Step08.md) — implemented / awaiting independent review; see ../docs/reviews/Step08-opencode.md. [Execution copy](../prompts/Step08-opencode-glm52.md).
 - [Step09: Expense plans and income expectations](Step09.md) — implemented / awaiting independent review; see ../docs/reviews/Step09-opencode.md. [Execution copy](../prompts/Step09-opencode-glm52.md).
 - [Step10: Partial payments and receipts engine](Step10.md) — implemented / awaiting independent review; see ../docs/reviews/Step10-opencode.md. [Execution copy](../prompts/Step10-opencode-glm52.md).
-- [Step11: Mobile settlement and reconciliation UX](Step11.md) — registered / awaiting approval and prerequisites. [Execution copy](../prompts/Step11-opencode-glm52.md).
+- [Step11: Mobile settlement and reconciliation UX](Step11.md) — implemented / awaiting independent review; see ../docs/reviews/Step11-opencode.md. [Execution copy](../prompts/Step11-opencode-glm52.md).
 - [Step12: Reserved commitments and tax money](Step12.md) — registered / awaiting approval and prerequisites. [Execution copy](../prompts/Step12-opencode-glm52.md).
 - [Step13: Savings-first overview and forecast](Step13.md) — registered / awaiting approval and prerequisites. [Execution copy](../prompts/Step13-opencode-glm52.md).
 - [Step14: Month rollover preview and apply](Step14.md) — registered / awaiting approval and prerequisites. [Execution copy](../prompts/Step14-opencode-glm52.md).

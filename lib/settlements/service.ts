@@ -69,12 +69,16 @@ import {
   type ReverseReceiptInput,
   type ReverseReceiptResult,
   type SettlementMode,
+  type SettlementHistoryEntry,
+  type ReceiptHistoryEntry,
 } from "./types";
 import {
   validatePayInput,
   validateReceiveInput,
   validateReverseSettlementInput,
   validateReverseReceiptInput,
+  validateObligationId,
+  validateIncomeId,
 } from "./validation";
 
 export {
@@ -1444,4 +1448,125 @@ export async function getReceipt(
     idempotencyKey: row.idempotency_key,
     reversed: reversal.rows.length > 0,
   };
+}
+
+// --- History listings (owner-scoped, chronological, with reversal linkage) ---
+
+type SettlementHistoryRow = {
+  id: string;
+  amount_cents: string;
+  mode: string;
+  account_id: string | null;
+  business_date: Date;
+  recorded_at: Date;
+  reversal_id: string | null;
+  reversal_business_date: Date | null;
+  reversal_recorded_at: Date | null;
+  reversal_reason: string | null;
+};
+
+type ReceiptHistoryRow = {
+  id: string;
+  amount_cents: string;
+  mode: string;
+  account_id: string | null;
+  business_date: Date;
+  recorded_at: Date;
+  reversal_id: string | null;
+  reversal_business_date: Date | null;
+  reversal_recorded_at: Date | null;
+  reversal_reason: string | null;
+};
+
+/**
+ * List the full chronological settlement history for an obligation, including
+ * reversal linkage. Owner-scoped: the obligation must belong to the owner.
+ * The planned_cents is never mutated; history is immutable.
+ */
+export async function listSettlementsForObligation(
+  ownerId: OwnerId,
+  obligationId: string,
+): Promise<SettlementHistoryEntry[]> {
+  const id = validateObligationId(obligationId);
+  const result = await query<SettlementHistoryRow>(
+    `SELECT s.id::text AS id, s.amount_cents::text AS amount_cents, s.mode,
+            s.account_id::text AS account_id, s.business_date, s.recorded_at,
+            r.id::text AS reversal_id,
+            r.business_date AS reversal_business_date,
+            r.recorded_at AS reversal_recorded_at,
+            r.reason AS reversal_reason
+     FROM settlements s
+     LEFT JOIN settlement_reversals r
+       ON r.owner_id = s.owner_id AND r.original_settlement_id = s.id
+     WHERE s.owner_id = $1 AND s.obligation_id = $2
+     ORDER BY s.recorded_at ASC, s.id ASC`,
+    [ownerId, id],
+  );
+  return result.rows.map((row) => ({
+    id: row.id,
+    amountCents: bigToInt(row.amount_cents) ?? 0,
+    mode: row.mode as SettlementMode,
+    accountId: row.account_id,
+    businessDate: formatDate(row.business_date),
+    recordedAt: row.recorded_at.toISOString(),
+    reversed: row.reversal_id !== null,
+    reversal: row.reversal_id
+      ? {
+          id: row.reversal_id,
+          businessDate: row.reversal_business_date
+            ? formatDate(row.reversal_business_date)
+            : null,
+          recordedAt: row.reversal_recorded_at
+            ? row.reversal_recorded_at.toISOString()
+            : null,
+          reason: row.reversal_reason,
+        }
+      : null,
+  }));
+}
+
+/**
+ * List the full chronological receipt history for an income expectation,
+ * including reversal linkage. Owner-scoped.
+ */
+export async function listReceiptsForIncome(
+  ownerId: OwnerId,
+  incomeExpectationId: string,
+): Promise<ReceiptHistoryEntry[]> {
+  const id = validateIncomeId(incomeExpectationId);
+  const result = await query<ReceiptHistoryRow>(
+    `SELECT r.id::text AS id, r.amount_cents::text AS amount_cents, r.mode,
+            r.account_id::text AS account_id, r.business_date, r.recorded_at,
+            rev.id::text AS reversal_id,
+            rev.business_date AS reversal_business_date,
+            rev.recorded_at AS reversal_recorded_at,
+            rev.reason AS reversal_reason
+     FROM income_receipts r
+     LEFT JOIN income_receipt_reversals rev
+       ON rev.owner_id = r.owner_id AND rev.original_receipt_id = r.id
+     WHERE r.owner_id = $1 AND r.income_expectation_id = $2
+     ORDER BY r.recorded_at ASC, r.id ASC`,
+    [ownerId, id],
+  );
+  return result.rows.map((row) => ({
+    id: row.id,
+    amountCents: bigToInt(row.amount_cents) ?? 0,
+    mode: row.mode as SettlementMode,
+    accountId: row.account_id,
+    businessDate: formatDate(row.business_date),
+    recordedAt: row.recorded_at.toISOString(),
+    reversed: row.reversal_id !== null,
+    reversal: row.reversal_id
+      ? {
+          id: row.reversal_id,
+          businessDate: row.reversal_business_date
+            ? formatDate(row.reversal_business_date)
+            : null,
+          recordedAt: row.reversal_recorded_at
+            ? row.reversal_recorded_at.toISOString()
+            : null,
+          reason: row.reversal_reason,
+        }
+      : null,
+  }));
 }

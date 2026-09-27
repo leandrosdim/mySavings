@@ -52,6 +52,23 @@ export type Settlement = {
   reversed: boolean;
 };
 
+/** A settlement history entry with reversal linkage (chronological). */
+export type SettlementHistoryEntry = {
+  id: SettlementId;
+  amountCents: number;
+  mode: SettlementMode;
+  accountId: string | null;
+  businessDate: string;
+  recordedAt: string;
+  reversed: boolean;
+  reversal: {
+    id: string;
+    businessDate: string | null;
+    recordedAt: string | null;
+    reason: string | null;
+  } | null;
+};
+
 /** A receipt row as returned to callers. */
 export type Receipt = {
   id: ReceiptId;
@@ -64,6 +81,23 @@ export type Receipt = {
   recordedAt: string;
   idempotencyKey: string;
   reversed: boolean;
+};
+
+/** A receipt history entry with reversal linkage (chronological). */
+export type ReceiptHistoryEntry = {
+  id: ReceiptId;
+  amountCents: number;
+  mode: SettlementMode;
+  accountId: string | null;
+  businessDate: string;
+  recordedAt: string;
+  reversed: boolean;
+  reversal: {
+    id: string;
+    businessDate: string | null;
+    recordedAt: string | null;
+    reason: string | null;
+  } | null;
 };
 
 /** Input for recording a payment (expense settlement). */

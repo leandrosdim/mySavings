@@ -113,7 +113,7 @@
     {
       "id": "Step11",
       "title": "Mobile settlement and reconciliation UX",
-      "status": "registered",
+      "status": "implemented",
       "canonical": "steps/Step11.md",
       "prompt": "prompts/Step11-opencode-glm52.md",
       "depends_on": [
