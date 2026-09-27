@@ -34,4 +34,5 @@ Each user has fully private finances. No shared dashboard, impersonation or app-
 Run npm run lint, npm run typecheck, npm test (when introduced), npm run build and npm audit. No npm audit fix --force.
 Financial code requires deterministic unit tests, DB rollback/idempotency/concurrency tests and two-user isolation tests. UI requires real browser and console checks, not just build/curl.
 Use approved test DB credentials; missing DB is a blocker, not permission to invent results. Clean scoped fixtures and stop owned servers.
+Persistent synthetic QA user for all agent-driven checks lives in .env as QA_USER_EMAIL/QA_USER_PASSWORD (never commit it; never write credentials into docs/git). Use that user until the end of the project instead of creating new ones.
 Preserve planning docs on scaffolding; maintain README, step index, financial rules and reviews. Never commit personal XLSX/populated exports.

@@ -40,6 +40,7 @@ export default defineConfig({
       "tests/months/**/*.test.ts",
       "tests/plans/**/*.test.ts",
       "tests/settlements/**/*.test.ts",
+      "tests/commitments/**/*.test.ts",
     ],
     exclude: [
       "node_modules/**",

@@ -45,6 +45,7 @@ import {
   type UpdateObligationInput,
   type UpdateObligationResult,
   type CancelObligationResult,
+  type ReleaseObligationResult,
   type ObligationFilter,
 } from "./types";
 import {
@@ -250,6 +251,67 @@ async function requireOpenMonth(
   }
 }
 
+// --- Linked-reserve validation ---
+
+type LinkedReserveRow = {
+  id: string;
+  kind: string;
+  planned_cents: string;
+  status: string;
+};
+
+/**
+ * Validate that an ordinary expense's linkedReserveId points to an
+ * owner-scoped reserved obligation. The linked reserve must belong to the
+ * same owner, be of kind 'reserved', and have a matching representation when
+ * the caller provides planned/amount context. This prevents a free
+ * client-controlled cross-owner relation and double-counting of the same
+ * liability in both E and R.
+ *
+ * When `expectedPlannedCents` is provided, the ordinary expense's planned
+ * amount must match the reserve's planned amount exactly. This enforces "one
+ * canonical liability": the ordinary entry is a *presentation* of the reserve,
+ * not a separate liability, so its amount must equal the reserve's amount.
+ */
+async function validateLinkedReserve(
+  client: import("../db").PoolClient,
+  ownerId: OwnerId,
+  linkedReserveId: string,
+  expectedPlannedCents?: number,
+): Promise<void> {
+  const result = await client.query<LinkedReserveRow>(
+    `SELECT id::text, kind, planned_cents::text, status
+     FROM obligations
+     WHERE owner_id = $1 AND id = $2
+     FOR UPDATE`,
+    [ownerId, linkedReserveId],
+  );
+  if (result.rows.length === 0) {
+    throw new ObligationValidationError(
+      "The linked reserved commitment does not exist or does not belong to you",
+    );
+  }
+  const row = result.rows[0];
+  if (row.kind !== "reserved") {
+    throw new ObligationValidationError(
+      "The linked obligation is not a reserved commitment",
+    );
+  }
+  if (row.status === "cancelled") {
+    throw new ObligationValidationError(
+      "Cannot link to a cancelled reserved commitment",
+    );
+  }
+  if (expectedPlannedCents !== undefined) {
+    const reservePlanned = bigToInt(row.planned_cents) ?? 0;
+    if (reservePlanned !== expectedPlannedCents) {
+      throw new ObligationConflictError(
+        "The linked ordinary expense must have the same planned amount as the reserved commitment it presents",
+      );
+    }
+  }
+}
+
 // --- Obligation CRUD ---
 
 /** Create a new obligation for the given owner + month. */
@@ -261,11 +323,23 @@ export async function createObligation(
   try {
     const obligation = await withTransaction(async (client) => {
       await requireOpenMonth(client, ownerId, validated.monthKey);
+      // Validate the linked reserve (owner-scoped, kind=reserved, matching
+      // amount) when an ordinary expense links to a reserve for display.
+      const linkedReserveId = validated.linkedReserveId ?? null;
+      if (linkedReserveId !== null) {
+        await validateLinkedReserve(
+          client,
+          ownerId,
+          linkedReserveId,
+          validated.plannedCents,
+        );
+      }
       const row = await client.query<ObligationRow>(
         `INSERT INTO obligations
            (owner_id, kind, title, planned_cents, original_month_key,
-            current_month_key, due_date, linked_account_id, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active')
+            current_month_key, due_date, linked_account_id, linked_reserve_id,
+            status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'active')
          RETURNING id, kind, title, planned_cents, original_month_key,
                    current_month_key, due_date, linked_account_id,
                    origin_template_id, linked_reserve_id, status,
@@ -279,6 +353,7 @@ export async function createObligation(
           validated.monthKey,
           validated.dueDate ? parseDate(validated.dueDate) : null,
           validated.linkedAccountId,
+          linkedReserveId,
         ],
       );
       return mapObligation(row.rows[0], 0);
@@ -425,6 +500,36 @@ export async function updateObligation(
         ? existing.linked_account_id
         : validated.linkedAccountId;
 
+    // Resolve the new linked_reserve_id. Only an ordinary expense may link
+    // to a reserve; a reserved obligation must never carry a linked reserve
+    // (that would create a second liability representation).
+    let newLinkedReserveId: string | null;
+    if (validated.linkedReserveId === undefined) {
+      newLinkedReserveId = existing.linked_reserve_id;
+    } else {
+      newLinkedReserveId = validated.linkedReserveId;
+      if (newLinkedReserveId !== null && existing.kind !== "ordinary") {
+        throw new ObligationValidationError(
+          "Only an ordinary expense may link to a reserved commitment",
+        );
+      }
+      if (newLinkedReserveId !== null) {
+        // The ordinary expense's planned amount (after this update) must
+        // match the linked reserve's planned amount exactly so the same
+        // liability is never counted in both E and R.
+        const plannedForLink =
+          validated.plannedCents !== undefined
+            ? validated.plannedCents
+            : (bigToInt(existing.planned_cents) ?? 0);
+        await validateLinkedReserve(
+          client,
+          ownerId,
+          newLinkedReserveId,
+          plannedForLink,
+        );
+      }
+    }
+
     let newPlannedCents: number;
     if (validated.plannedCents !== undefined) {
       newPlannedCents = validated.plannedCents;
@@ -432,6 +537,20 @@ export async function updateObligation(
       if (newPlannedCents < paidCents) {
         throw new SettledHistoryError(
           "Cannot lower the planned amount below the already-paid amount",
+        );
+      }
+      // When linked to a reserve, the planned amount must equal the reserve's
+      // planned amount. If the amount changed, re-validate the link.
+      if (
+        newLinkedReserveId !== null &&
+        validated.plannedCents !== undefined &&
+        validated.linkedReserveId === undefined
+      ) {
+        await validateLinkedReserve(
+          client,
+          ownerId,
+          newLinkedReserveId,
+          newPlannedCents,
         );
       }
     } else {
@@ -442,19 +561,19 @@ export async function updateObligation(
       const row = await client.query<ObligationRow>(
         `UPDATE obligations
          SET title = $3, planned_cents = $4, due_date = $5,
-             linked_account_id = $6, updated_at = now()
+             linked_account_id = $6, linked_reserve_id = $7, updated_at = now()
          WHERE owner_id = $1 AND id = $2
          RETURNING id, kind, title, planned_cents, original_month_key,
                    current_month_key, due_date, linked_account_id,
                    origin_template_id, linked_reserve_id, status,
                    created_at, updated_at`,
-        [ownerId, id, newTitle, newPlannedCents, newDueDate, newAccountId],
+        [ownerId, id, newTitle, newPlannedCents, newDueDate, newAccountId, newLinkedReserveId],
       );
       return mapObligation(row.rows[0], paidCents);
     } catch (error) {
       if (isForeignKeyViolation(error)) {
         throw new ObligationValidationError(
-          "The selected account does not exist or does not belong to you",
+          "The selected account or linked reserve does not exist or does not belong to you",
         );
       }
       throw error;
@@ -518,6 +637,100 @@ export async function cancelObligation(
                  created_at, updated_at`,
       [ownerId, id],
     );
+    return mapObligation(row.rows[0], paidCents);
+  });
+  return { obligation };
+}
+
+/**
+ * Release the unpaid remainder of an obligation. The status transitions to
+ * 'released'; the planned_cents is preserved and paid history is never
+ * deleted. The outstanding amount (planned minus paid) is un-protected from
+ * the spendable calculation, but the row and its settlement history remain.
+ *
+ * Release is intended for reserved commitments whose remainder will never be
+ * paid (e.g. a tax estimate that was lowered). It is audited. An obligation
+ * with non-reversed settlements can still be released: the paid portion stays
+ * settled and only the unpaid remainder is released. Releasing an already-
+ * released obligation is idempotent.
+ *
+ * Release is rejected on a closed month (immutable snapshots). Cancelled
+ * obligations cannot be released (they are already removed from the
+ * spendable calculation).
+ */
+export async function releaseObligation(
+  ownerId: OwnerId,
+  obligationId: ObligationId,
+): Promise<ReleaseObligationResult> {
+  const id = validateObligationId(obligationId);
+  const obligation = await withTransaction(async (client) => {
+    const lockResult = await client.query<ObligationRow>(
+      `SELECT id, kind, title, planned_cents, original_month_key,
+              current_month_key, due_date, linked_account_id,
+              origin_template_id, linked_reserve_id, status,
+              created_at, updated_at
+       FROM obligations
+       WHERE owner_id = $1 AND id = $2
+       FOR UPDATE`,
+      [ownerId, id],
+    );
+    if (lockResult.rows.length === 0) {
+      throw new ObligationNotFoundError("Obligation not found");
+    }
+    const existing = lockResult.rows[0];
+
+    // Idempotent: releasing an already-released obligation returns it.
+    if (existing.status === "released") {
+      return mapObligation(existing, await computePaidCents(client, ownerId, id));
+    }
+
+    // Cancelled obligations are already removed from the spendable
+    // calculation; releasing them is not meaningful.
+    if (existing.status === "cancelled") {
+      throw new ObligationValidationError(
+        "Cannot release a cancelled obligation",
+      );
+    }
+
+    // Check the month is open (closed snapshots are immutable).
+    const planResult = await client.query<PlanStatusRow>(
+      `SELECT status FROM monthly_plans
+       WHERE owner_id = $1 AND month_key = $2`,
+      [ownerId, existing.current_month_key],
+    );
+    if (planResult.rows[0]?.status === "closed") {
+      throw new ClosedMonthError(
+        `Month ${existing.current_month_key} is closed and cannot be edited`,
+      );
+    }
+
+    const paidCents = await computePaidCents(client, ownerId, id);
+    const plannedCents = bigToInt(existing.planned_cents) ?? 0;
+    const releasedCents = plannedCents - paidCents;
+
+    const row = await client.query<ObligationRow>(
+      `UPDATE obligations
+       SET status = 'released', updated_at = now()
+       WHERE owner_id = $1 AND id = $2
+       RETURNING id, kind, title, planned_cents, original_month_key,
+                 current_month_key, due_date, linked_account_id,
+                 origin_template_id, linked_reserve_id, status,
+                 created_at, updated_at`,
+      [ownerId, id],
+    );
+
+    // Audit the release. The summary records the released (unpaid remainder)
+    // amount without exposing internal IDs beyond the entity_id column.
+    await client.query(
+      `INSERT INTO audit_log (owner_id, operation_type, entity_type, entity_id, summary)
+       VALUES ($1, 'obligation_release', 'obligation', $2, $3)`,
+      [
+        ownerId,
+        id,
+        `Released ${releasedCents} cents unpaid remainder of obligation`,
+      ],
+    );
+
     return mapObligation(row.rows[0], paidCents);
   });
   return { obligation };

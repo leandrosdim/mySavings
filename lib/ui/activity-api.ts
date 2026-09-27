@@ -105,6 +105,7 @@ export async function createObligationApi(input: {
   monthKey: string;
   dueDate?: string | null;
   linkedAccountId?: string | null;
+  linkedReserveId?: string | null;
 }): Promise<
   { ok: true; obligation: Obligation } | { ok: false; error: string }
 > {
@@ -117,6 +118,7 @@ export async function createObligationApi(input: {
       monthKey: input.monthKey,
       dueDate: input.dueDate ?? null,
       linkedAccountId: input.linkedAccountId ?? null,
+      linkedReserveId: input.linkedReserveId ?? null,
     },
   );
   if (result.ok) return { ok: true, obligation: result.data.obligation };
@@ -130,6 +132,7 @@ export async function updateObligationApi(
     plannedCents?: number;
     dueDate?: string | null;
     linkedAccountId?: string | null;
+    linkedReserveId?: string | null;
   },
 ): Promise<
   { ok: true; obligation: Obligation } | { ok: false; error: string }
@@ -149,6 +152,19 @@ export async function cancelObligationApi(
 > {
   const result = await postJson<{ obligation: Obligation }>(
     `/api/obligations/${obligationId}/cancel`,
+    {},
+  );
+  if (result.ok) return { ok: true, obligation: result.data.obligation };
+  return { ok: false, error: result.error };
+}
+
+export async function releaseObligationApi(
+  obligationId: string,
+): Promise<
+  { ok: true; obligation: Obligation } | { ok: false; error: string }
+> {
+  const result = await postJson<{ obligation: Obligation }>(
+    `/api/obligations/${obligationId}/release`,
     {},
   );
   if (result.ok) return { ok: true, obligation: result.data.obligation };

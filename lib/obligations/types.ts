@@ -48,6 +48,14 @@ export type CreateObligationInput = {
   monthKey: MonthKey;
   dueDate?: string | null;
   linkedAccountId?: string | null;
+  /**
+   * Optional link from an ordinary expense to a reserved commitment it
+   * presents. When set, the ordinary expense is counted once in R (via the
+   * reserve) and excluded from E so aggregation never double-counts the same
+   * liability. Only an ordinary obligation may carry a linkedReserveId; a
+   * reserved obligation must not link to another reserve.
+   */
+  linkedReserveId?: string | null;
 };
 
 /** Input for updating an obligation. */
@@ -56,6 +64,7 @@ export type UpdateObligationInput = {
   plannedCents?: number;
   dueDate?: string | null;
   linkedAccountId?: string | null;
+  linkedReserveId?: string | null;
 };
 
 /** Result of creating an obligation. */
@@ -70,6 +79,11 @@ export type UpdateObligationResult = {
 
 /** Result of cancelling an obligation. */
 export type CancelObligationResult = {
+  obligation: Obligation;
+};
+
+/** Result of releasing an obligation's unpaid remainder. */
+export type ReleaseObligationResult = {
   obligation: Obligation;
 };
 

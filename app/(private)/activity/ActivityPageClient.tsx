@@ -22,6 +22,7 @@ import {
   createObligationApi,
   updateObligationApi,
   cancelObligationApi,
+  releaseObligationApi,
   createIncomeApi,
   updateIncomeApi,
   cancelIncomeApi,
@@ -412,6 +413,7 @@ export function ActivityPageClient({
           monthKey={selectedMonth}
           kind={tab === "reserves" ? "reserved" : "ordinary"}
           accounts={activeAccounts}
+          reserves={reserved}
           onSaved={() => {
             refresh();
             setShowForm(false);
@@ -428,6 +430,10 @@ export function ActivityPageClient({
           onClose={() => setDetailItem(null)}
           onEdit={() => handleEditObligation(detailItem.data)}
           onCanceled={() => {
+            refresh();
+            setDetailItem(null);
+          }}
+          onReleased={() => {
             refresh();
             setDetailItem(null);
           }}
@@ -639,6 +645,7 @@ type ObligationFormSheetProps = {
   monthKey: string;
   kind: ObligationKind;
   accounts: Account[];
+  reserves: Obligation[];
   onSaved: () => void;
 };
 
@@ -649,6 +656,7 @@ function ObligationFormSheet({
   monthKey,
   kind,
   accounts,
+  reserves,
   onSaved,
 }: ObligationFormSheetProps) {
   const [title, setTitle] = useState(editing?.title ?? "");
@@ -659,18 +667,27 @@ function ObligationFormSheet({
   );
   const [dueDate, setDueDate] = useState(editing?.dueDate ?? "");
   const [accountId, setAccountId] = useState(editing?.linkedAccountId ?? "");
+  const [linkedReserveId, setLinkedReserveId] = useState(
+    editing?.linkedReserveId ?? "",
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const titleId = useId();
   const amountId = useId();
   const dueDateId = useId();
   const accountIdId = useId();
+  const reserveIdId = useId();
+
+  const activeReserves = reserves.filter(
+    (r) => r.status !== "cancelled" && r.status !== "released",
+  );
 
   function reset() {
     setTitle("");
     setAmountInput("");
     setDueDate("");
     setAccountId("");
+    setLinkedReserveId("");
     setError(null);
   }
 
@@ -699,6 +716,19 @@ function ObligationFormSheet({
       return;
     }
 
+    // When linking an ordinary expense to a reserve, the amount must match
+    // the reserve's planned amount (one canonical liability).
+    const reserveId = linkedReserveId || null;
+    if (reserveId && kind === "ordinary") {
+      const linked = activeReserves.find((r) => r.id === reserveId);
+      if (linked && linked.plannedCents !== parsed.cents) {
+        setError(
+          `Το ποσό πρέπει να ταιριάζει με τη δεσμευμένη («${linked.title}»): ${formatEurEl(linked.plannedCents)}.`,
+        );
+        return;
+      }
+    }
+
     setPending(true);
     if (editing) {
       const result = await updateObligationApi(editing.id, {
@@ -706,6 +736,7 @@ function ObligationFormSheet({
         plannedCents: parsed.cents,
         dueDate: dueDate.trim() || null,
         linkedAccountId: accountId || null,
+        linkedReserveId: reserveId,
       });
       setPending(false);
       if (result.ok) {
@@ -721,6 +752,7 @@ function ObligationFormSheet({
         monthKey,
         dueDate: dueDate.trim() || null,
         linkedAccountId: accountId || null,
+        linkedReserveId: reserveId,
       });
       setPending(false);
       if (result.ok) {
@@ -830,6 +862,38 @@ function ObligationFormSheet({
               {accounts.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+        ) : null}
+
+        {kind === "ordinary" && activeReserves.length > 0 ? (
+          <Field
+            label="Σύνδεση με δέσμευση (προαιρετικό)"
+            htmlFor={reserveIdId}
+            hint="Συνδέσε αυτό το έξοδο με δεσμευμένη υποχρέωση. Το ποσό πρέπει να ταιριάζει. Μετράται μία φορά στη δέσμευση, όχι διπλά."
+          >
+            <select
+              id={reserveIdId}
+              value={linkedReserveId}
+              onChange={(e) => {
+                setLinkedReserveId(e.target.value);
+                const linked = activeReserves.find(
+                  (r) => r.id === e.target.value,
+                );
+                if (linked) {
+                  setAmountInput(
+                    (linked.plannedCents / 100).toString().replace(".", ","),
+                  );
+                }
+              }}
+              style={selectStyle}
+            >
+              <option value="">— Κανένας —</option>
+              {activeReserves.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.title} ({formatEurEl(r.plannedCents)})
                 </option>
               ))}
             </select>
@@ -1041,6 +1105,7 @@ function ObligationDetailSheet({
   onClose,
   onEdit,
   onCanceled,
+  onReleased,
   onPay,
   onReverse,
 }: {
@@ -1049,6 +1114,7 @@ function ObligationDetailSheet({
   onClose: () => void;
   onEdit: () => void;
   onCanceled: () => void;
+  onReleased: () => void;
   onPay: () => void;
   onReverse: (entry: SettlementHistoryEntry) => void;
 }) {
@@ -1057,6 +1123,7 @@ function ObligationDetailSheet({
   const [history, setHistory] = useState<SettlementHistoryEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [confirmRelease, setConfirmRelease] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -1087,8 +1154,27 @@ function ObligationDetailSheet({
     }
   }
 
+  async function handleRelease() {
+    setError(null);
+    setPending(true);
+    const result = await releaseObligationApi(obligation.id);
+    setPending(false);
+    if (result.ok) {
+      onReleased();
+    } else {
+      setError(result.error);
+      setConfirmRelease(false);
+    }
+  }
+
   const canPay =
-    obligation.status !== "cancelled" && obligation.remainingCents > 0;
+    obligation.status !== "cancelled" &&
+    obligation.status !== "released" &&
+    obligation.remainingCents > 0;
+  const canRelease =
+    obligation.status !== "cancelled" &&
+    obligation.status !== "released" &&
+    obligation.remainingCents > 0;
 
   return (
     <Sheet
@@ -1097,7 +1183,7 @@ function ObligationDetailSheet({
       onClose={onClose}
       footer={
         <>
-          {obligation.status !== "cancelled" ? (
+          {obligation.status !== "cancelled" && obligation.status !== "released" ? (
             <>
               {canPay ? (
                 <Button
@@ -1115,14 +1201,54 @@ function ObligationDetailSheet({
               >
                 Επεξεργασία
               </Button>
-              <Button
-                variant="danger"
-                onClick={handleCancel}
-                pending={pending}
-                style={{ width: "100%" }}
-              >
-                {pending ? "Ακύρωση…" : "Ακύρωση εγγραφής"}
-              </Button>
+              {canRelease ? (
+                confirmRelease ? (
+                  <>
+                    <Alert tone="warning">
+                      Η απελευθέρωση καταργεί την προστασία του υπόλοιπου ποσού
+                      ({formatEurEl(obligation.remainingCents)}). Το
+                      σχεδιασμένο ποσό και το ιστορικό πληρωμών παραμένουν.
+                    </Alert>
+                    <Button
+                      variant="danger"
+                      onClick={handleRelease}
+                      pending={pending}
+                      style={{ width: "100%" }}
+                    >
+                      {pending ? "Απελευθέρωση…" : "Ναι, απελευθέρωση"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setConfirmRelease(false)}
+                      style={{ width: "100%" }}
+                    >
+                      Άκυρο απελευθέρωσης
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="danger"
+                    onClick={() => {
+                      setError(null);
+                      setConfirmRelease(true);
+                    }}
+                    style={{ width: "100%" }}
+                  >
+                    Απελευθέρωση υπολοίπου
+                  </Button>
+                )
+              ) : null}
+              {!confirmRelease ? (
+                <Button
+                  variant="danger"
+                  onClick={handleCancel}
+                  pending={pending}
+                  style={{ width: "100%" }}
+                >
+                  {pending ? "Ακύρωση…" : "Ακύρωση εγγραφής"}
+                </Button>
+              ) : null}
             </>
           ) : null}
           <Button

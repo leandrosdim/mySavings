@@ -10,6 +10,7 @@ export type {
   UpdateObligationInput,
   UpdateObligationResult,
   CancelObligationResult,
+  ReleaseObligationResult,
   ObligationFilter,
   OwnerId,
   MonthKey,
@@ -30,6 +31,7 @@ export {
   listObligations,
   updateObligation,
   cancelObligation,
+  releaseObligation,
 } from "./service";
 
 export {

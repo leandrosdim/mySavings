@@ -147,6 +147,7 @@ export function validateCreateObligationInput(raw: {
   monthKey: unknown;
   dueDate?: unknown;
   linkedAccountId?: unknown;
+  linkedReserveId?: unknown;
 }): CreateObligationInput {
   const kind = validateKind(raw.kind);
   const title = validateTitle(raw.title);
@@ -154,7 +155,16 @@ export function validateCreateObligationInput(raw: {
   const monthKey = validateMonthKey(raw.monthKey);
   const dueDate = validateOptionalDate(raw.dueDate);
   const linkedAccountId = validateOptionalAccountId(raw.linkedAccountId);
-  return { kind, title, plannedCents, monthKey, dueDate, linkedAccountId };
+  const linkedReserveId = validateOptionalAccountId(raw.linkedReserveId);
+  // Only an ordinary expense may link to a reserve; a reserved commitment
+  // must not link to another reserve (that would create a second liability
+  // representation of the same commitment).
+  if (linkedReserveId !== null && kind !== "ordinary") {
+    throw new ObligationValidationError(
+      "Only an ordinary expense may link to a reserved commitment",
+    );
+  }
+  return { kind, title, plannedCents, monthKey, dueDate, linkedAccountId, linkedReserveId };
 }
 
 /** Validate a partial UpdateObligationInput. At least one field must be present. */
@@ -163,12 +173,14 @@ export function validateUpdateObligationInput(raw: {
   plannedCents?: unknown;
   dueDate?: unknown;
   linkedAccountId?: unknown;
+  linkedReserveId?: unknown;
 }): UpdateObligationInput {
   const hasTitle = raw.title !== undefined;
   const hasAmount = raw.plannedCents !== undefined;
   const hasDueDate = raw.dueDate !== undefined;
   const hasAccount = raw.linkedAccountId !== undefined;
-  if (!hasTitle && !hasAmount && !hasDueDate && !hasAccount) {
+  const hasReserve = raw.linkedReserveId !== undefined;
+  if (!hasTitle && !hasAmount && !hasDueDate && !hasAccount && !hasReserve) {
     throw new ObligationValidationError(
       "At least one field must be provided for update",
     );
@@ -185,6 +197,9 @@ export function validateUpdateObligationInput(raw: {
   }
   if (hasAccount) {
     result.linkedAccountId = validateOptionalAccountId(raw.linkedAccountId);
+  }
+  if (hasReserve) {
+    result.linkedReserveId = validateOptionalAccountId(raw.linkedReserveId);
   }
   return result;
 }

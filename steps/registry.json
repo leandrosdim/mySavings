@@ -113,7 +113,7 @@
     {
       "id": "Step11",
       "title": "Mobile settlement and reconciliation UX",
-      "status": "implemented",
+      "status": "verified",
       "canonical": "steps/Step11.md",
       "prompt": "prompts/Step11-opencode-glm52.md",
       "depends_on": [
@@ -124,7 +124,7 @@
     {
       "id": "Step12",
       "title": "Reserved commitments and tax money",
-      "status": "registered",
+      "status": "implemented",
       "canonical": "steps/Step12.md",
       "prompt": "prompts/Step12-opencode-glm52.md",
       "depends_on": [

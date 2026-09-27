@@ -1,6 +1,8 @@
 // PATCH /api/obligations/[id] — update an obligation.
 // Enforces revision rules: planned_cents cannot be lowered below the
-// already-paid amount. Paid history is never deleted.
+// already-paid amount. Paid history is never deleted. An ordinary expense
+// may link to a reserved commitment via linkedReserveId (owner-scoped, amount
+// matched) so the same liability is counted once in R, not in both E and R.
 
 import { NextResponse, type NextRequest } from "next/server";
 import { updateObligation } from "@/lib/obligations/service";
@@ -18,6 +20,7 @@ export async function PATCH(
       plannedCents: body.plannedCents,
       dueDate: body.dueDate,
       linkedAccountId: body.linkedAccountId,
+      linkedReserveId: body.linkedReserveId,
     });
     const result = await updateObligation(owner.ownerId, id, input);
     return NextResponse.json(result, { status: 200, headers: NO_STORE });
