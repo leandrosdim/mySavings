@@ -86,7 +86,7 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
     return { ok: false, error: GENERIC_ERROR };
   }
 
-  redirect("/dashboard");
+  redirect("/accounts");
 }
 
 export async function logoutAction(): Promise<void> {

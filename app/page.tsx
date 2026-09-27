@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { getOptionalSession } from "@/lib/auth/dal";
+import { redirect } from "next/navigation";
 
 type PillProps = {
   children: ReactNode;
@@ -73,7 +75,12 @@ function Feature({ title, children }: FeatureProps) {
   );
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await getOptionalSession();
+  if (session) {
+    redirect("/accounts");
+  }
+
   return (
     <main
       style={{
@@ -152,7 +159,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <Pill>Υπό θεμελίωση · Δεν έχει ρυθμιστεί</Pill>
+        <Pill>Ιδιωτικός χώρος · Συνδέσου για να ξεκινήσεις</Pill>
       </header>
 
       <p
@@ -193,22 +200,24 @@ export default function HomePage() {
         </Feature>
       </div>
 
-      <div
-        role="note"
+      <a
+        href="/login"
         style={{
-          fontSize: "0.84rem",
-          lineHeight: 1.5,
-          color: "var(--warning)",
-          backgroundColor: "#fffbeb",
-          border: "1px solid #fde68a",
-          borderRadius: "0.7rem",
-          padding: "0.75rem 0.85rem",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "2.75rem",
+          padding: "0.6rem 1.1rem",
+          borderRadius: "0.6rem",
+          backgroundColor: "var(--accent)",
+          color: "white",
+          fontWeight: 600,
+          fontSize: "0.95rem",
+          textDecoration: "none",
         }}
       >
-        Αυτό είναι το στάδιο θεμελίωσης. Η σύνδεση, η βάση δεδομένων και οι
-        πραγματικές λειτουργίες δεν έχουν ρυθμιστεί ακόμη. Δεν εμφανίζονται
-        υποθετικά υπόλοιπα ή έλεγχοι πληρωμών.
-      </div>
+        Σύνδεση
+      </a>
     </main>
   );
 }
