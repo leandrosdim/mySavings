@@ -118,7 +118,7 @@ export async function dropDisposableSchema(
         await client.query("COMMIT");
         return;
       }
-      if (!schema.startsWith("step03_test") && !schema.startsWith("step03_db_test") && !schema.startsWith("step04") && !schema.startsWith("step05") && !schema.startsWith("step06") && !schema.startsWith("step07") && !schema.startsWith("step08") && !schema.startsWith("step09") && !schema.startsWith("step10") && !schema.startsWith("step12") && !schema.startsWith("step13")) {
+      if (!schema.startsWith("step03_test") && !schema.startsWith("step03_db_test") && !schema.startsWith("step04") && !schema.startsWith("step05") && !schema.startsWith("step06") && !schema.startsWith("step07") && !schema.startsWith("step08") && !schema.startsWith("step09") && !schema.startsWith("step10") && !schema.startsWith("step12") && !schema.startsWith("step13") && !schema.startsWith("step14")) {
         await client.query("ROLLBACK");
         throw new Error(`Refusing to drop non-test schema: ${schema}`);
       }

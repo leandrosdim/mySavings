@@ -140,6 +140,22 @@ export function PrivateShell({ email, children }: PrivateShellProps) {
               Πλάνο
             </Link>
             <Link
+              href="/months/new"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                minHeight: "2.75rem",
+                padding: "0.4rem 0.8rem",
+                borderRadius: "0.5rem",
+                fontWeight: 600,
+                fontSize: "0.9rem",
+                color: "var(--fg)",
+                textDecoration: "none",
+              }}
+            >
+              Επόμενος
+            </Link>
+            <Link
               href="/activity"
               style={{
                 display: "inline-flex",

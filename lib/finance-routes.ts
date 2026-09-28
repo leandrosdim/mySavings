@@ -50,6 +50,14 @@ import {
   AlreadyReversedError,
   RefreshReconciliationRequiredError,
 } from "./settlements/types";
+import {
+  RolloverServiceError,
+  RolloverValidationError,
+  RolloverConflictError,
+  RolloverClosedMonthError,
+  RolloverStalePreviewError,
+  RolloverIdempotencyConflictError,
+} from "./rollover/types";
 import type { OwnerId } from "./months/types";
 
 export const NO_STORE = { "Cache-Control": "no-store" };
@@ -179,11 +187,42 @@ export function mapServiceError(error: unknown): NextResponse {
     );
   }
   if (
+    error instanceof RolloverValidationError ||
+    error instanceof RolloverConflictError
+  ) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 400, headers: NO_STORE },
+    );
+  }
+  if (error instanceof RolloverClosedMonthError) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 400, headers: NO_STORE },
+    );
+  }
+  if (error instanceof RolloverStalePreviewError) {
+    return NextResponse.json(
+      {
+        error: error.message,
+        stalePreview: true,
+      },
+      { status: 409, headers: NO_STORE },
+    );
+  }
+  if (error instanceof RolloverIdempotencyConflictError) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 409, headers: NO_STORE },
+    );
+  }
+  if (
     error instanceof PlanServiceError ||
     error instanceof TemplateServiceError ||
     error instanceof ObligationServiceError ||
     error instanceof IncomeServiceError ||
-    error instanceof SettlementServiceError
+    error instanceof SettlementServiceError ||
+    error instanceof RolloverServiceError
   ) {
     return NextResponse.json(
       { error: error.message },

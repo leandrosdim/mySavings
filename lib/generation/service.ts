@@ -61,11 +61,6 @@ export async function generateMonthEntries(
   const { plan } = await getOrCreatePlan(ownerId, key, 0);
   const templates = await listActiveTemplates(ownerId);
 
-  let generatedObligations = 0;
-  let generatedIncome = 0;
-  let skippedObligations = 0;
-  let skippedIncome = 0;
-
   if (templates.length === 0) {
     return {
       planId: plan.id,
@@ -77,33 +72,62 @@ export async function generateMonthEntries(
     };
   }
 
-  await withTransaction(async (client) => {
-    for (const template of templates) {
-      if (template.kind === "income") {
-        const result = await generateIncomeFromTemplate(
-          client,
-          ownerId,
-          key,
-          template,
-        );
-        if (result === "generated") generatedIncome++;
-        else skippedIncome++;
-      } else {
-        const result = await generateObligationFromTemplate(
-          client,
-          ownerId,
-          key,
-          template,
-        );
-        if (result === "generated") generatedObligations++;
-        else skippedObligations++;
-      }
-    }
+  const counts = await withTransaction(async (client) => {
+    return generateFromTemplates(client, ownerId, key, templates);
   });
 
   return {
     planId: plan.id,
     monthKey: key,
+    ...counts,
+  };
+}
+
+/**
+ * Generate month entries from a pre-loaded template list inside an existing
+ * transaction client. Used by the rollover apply path so generation and
+ * carryover share one atomic transaction. Idempotent per template via the
+ * partial unique indexes on obligations/income_expectations.
+ */
+export async function generateFromTemplates(
+  client: PoolClient,
+  ownerId: OwnerId,
+  monthKey: MonthKey,
+  templates: RecurringTemplate[],
+): Promise<{
+  generatedObligations: number;
+  generatedIncome: number;
+  skippedObligations: number;
+  skippedIncome: number;
+}> {
+  let generatedObligations = 0;
+  let generatedIncome = 0;
+  let skippedObligations = 0;
+  let skippedIncome = 0;
+
+  for (const template of templates) {
+    if (template.kind === "income") {
+      const result = await generateIncomeFromTemplate(
+        client,
+        ownerId,
+        monthKey,
+        template,
+      );
+      if (result === "generated") generatedIncome++;
+      else skippedIncome++;
+    } else {
+      const result = await generateObligationFromTemplate(
+        client,
+        ownerId,
+        monthKey,
+        template,
+      );
+      if (result === "generated") generatedObligations++;
+      else skippedObligations++;
+    }
+  }
+
+  return {
     generatedObligations,
     generatedIncome,
     skippedObligations,
