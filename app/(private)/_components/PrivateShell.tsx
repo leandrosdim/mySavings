@@ -91,7 +91,7 @@ export function PrivateShell({ email, children }: PrivateShellProps) {
             style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap" }}
           >
             <Link
-              href="/accounts"
+              href="/dashboard"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -103,6 +103,22 @@ export function PrivateShell({ email, children }: PrivateShellProps) {
                 color: "var(--accent)",
                 textDecoration: "none",
                 backgroundColor: "var(--accent-weak)",
+              }}
+            >
+              Επισκόπηση
+            </Link>
+            <Link
+              href="/accounts"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                minHeight: "2.75rem",
+                padding: "0.4rem 0.8rem",
+                borderRadius: "0.5rem",
+                fontWeight: 600,
+                fontSize: "0.9rem",
+                color: "var(--fg)",
+                textDecoration: "none",
               }}
             >
               Λογαριασμοί

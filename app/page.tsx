@@ -78,7 +78,7 @@ function Feature({ title, children }: FeatureProps) {
 export default async function HomePage() {
   const session = await getOptionalSession();
   if (session) {
-    redirect("/accounts");
+    redirect("/dashboard");
   }
 
   return (
