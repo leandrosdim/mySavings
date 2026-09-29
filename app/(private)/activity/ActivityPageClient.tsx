@@ -38,6 +38,7 @@ import { SettlementHistory } from "@/components/settlements/SettlementHistory";
 
 type ActivityPageClientProps = {
   currentMonth: string;
+  selectedMonth: string;
   plans: MonthlyPlan[];
   obligations: Obligation[];
   reserved: Obligation[];
@@ -79,6 +80,7 @@ const selectStyle: React.CSSProperties = {
 
 export function ActivityPageClient({
   currentMonth,
+  selectedMonth: selectedMonthFromServer,
   plans,
   obligations,
   reserved,
@@ -87,7 +89,7 @@ export function ActivityPageClient({
 }: ActivityPageClientProps) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("expenses");
-  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const selectedMonth = selectedMonthFromServer;
   const [showForm, setShowForm] = useState(false);
   const [editingObligation, setEditingObligation] = useState<Obligation | null>(null);
   const [editingIncome, setEditingIncome] = useState<IncomeExpectation | null>(null);
@@ -132,13 +134,21 @@ export function ActivityPageClient({
     [tab, income],
   );
 
-  const totalPlanned = useMemo(
-    () => currentObligations.reduce((sum, o) => sum + o.plannedCents, 0),
+  const payableObligations = useMemo(
+    () =>
+      currentObligations.filter(
+        (o) => o.status !== "cancelled" && o.status !== "released",
+      ),
     [currentObligations],
   );
+
+  const totalPlanned = useMemo(
+    () => payableObligations.reduce((sum, o) => sum + o.plannedCents, 0),
+    [payableObligations],
+  );
   const totalPaid = useMemo(
-    () => currentObligations.reduce((sum, o) => sum + o.paidCents, 0),
-    [currentObligations],
+    () => payableObligations.reduce((sum, o) => sum + o.paidCents, 0),
+    [payableObligations],
   );
   const totalRemaining = totalPlanned - totalPaid;
 
@@ -204,8 +214,8 @@ export function ActivityPageClient({
           <select
             value={selectedMonth}
             onChange={(e) => {
-              setSelectedMonth(e.target.value);
-              refresh();
+              const month = e.target.value;
+              router.push(`/activity?month=${encodeURIComponent(month)}`);
             }}
             style={selectStyle}
           >
@@ -573,7 +583,10 @@ function EntryList({
               cursor: "pointer",
               width: "100%",
               border: "1px solid var(--border)",
-              opacity: item.status === "cancelled" ? 0.55 : 1,
+              opacity:
+                item.status === "cancelled" || item.status === "released"
+                  ? 0.55
+                  : 1,
             }}
           >
             <div
@@ -628,6 +641,7 @@ function EntryList({
               {item.dueDate ? <span>· Λήξη: {item.dueDate}</span> : null}
               {item.status === "cancelled" ? <span>· Ακυρώθηκε</span> : null}
               {item.status === "settled" ? <span>· Εξοφλήθηκε</span> : null}
+              {item.status === "released" ? <span>· Απελευθερώθηκε</span> : null}
             </div>
           </button>
         </li>
