@@ -82,6 +82,11 @@ export type CancelObligationResult = {
   obligation: Obligation;
 };
 
+/** Result of deleting a released obligation with no payment history. */
+export type DeleteObligationResult = {
+  obligationId: ObligationId;
+};
+
 /** Result of releasing an obligation's unpaid remainder. */
 export type ReleaseObligationResult = {
   obligation: Obligation;

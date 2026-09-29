@@ -158,6 +158,17 @@ export async function cancelObligationApi(
   return { ok: false, error: result.error };
 }
 
+export async function deleteReleasedObligationApi(
+  obligationId: string,
+): Promise<{ ok: true; obligationId: string } | { ok: false; error: string }> {
+  const result = await postJson<{ obligationId: string }>(
+    `/api/obligations/${obligationId}/delete`,
+    {},
+  );
+  if (result.ok) return { ok: true, obligationId: result.data.obligationId };
+  return { ok: false, error: result.error };
+}
+
 export async function releaseObligationApi(
   obligationId: string,
 ): Promise<

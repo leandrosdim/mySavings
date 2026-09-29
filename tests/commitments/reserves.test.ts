@@ -39,6 +39,7 @@ import {
   listObligations,
   updateObligation,
   cancelObligation,
+  deleteReleasedObligation,
   releaseObligation,
   ObligationNotFoundError,
   ObligationValidationError,
@@ -433,6 +434,45 @@ describe("Step12 reserves: explicit release", () => {
     expect(released.paidCents).toBe(4000);
     expect(released.remainingCents).toBe(5000);
   });
+
+  it("deletes an unpaid released obligation and audits the deletion", async () => {
+    await createPlanDirect(ctx.pool, ctx.userA, "2027-12");
+    const { obligation: expense } = await createObligation(ctx.userA, {
+      kind: "ordinary",
+      title: "Delete released expense",
+      plannedCents: 7000,
+      monthKey: "2027-12",
+    });
+    await releaseObligation(ctx.userA, expense.id);
+    const beforeAudit = await countAuditEntries(ctx.pool, ctx.userA, "obligation_delete");
+
+    const result = await deleteReleasedObligation(ctx.userA, expense.id);
+
+    expect(result.obligationId).toBe(expense.id);
+    await expect(getObligation(ctx.userA, expense.id)).rejects.toThrow(
+      ObligationNotFoundError,
+    );
+    const afterAudit = await countAuditEntries(ctx.pool, ctx.userA, "obligation_delete");
+    expect(afterAudit).toBe(beforeAudit + 1);
+  });
+
+  it("does not delete a released obligation with settlement history", async () => {
+    await createPlanDirect(ctx.pool, ctx.userA, "2028-01");
+    const { obligation: expense } = await createObligation(ctx.userA, {
+      kind: "ordinary",
+      title: "Keep payment history",
+      plannedCents: 9000,
+      monthKey: "2028-01",
+    });
+    await insertSettlementDirect(ctx.pool, ctx.userA, expense.id, 4000, "2028-01-10");
+    await releaseObligation(ctx.userA, expense.id);
+
+    await expect(deleteReleasedObligation(ctx.userA, expense.id)).rejects.toThrow(
+      SettledHistoryError,
+    );
+    const stillThere = await getObligation(ctx.userA, expense.id);
+    expect(stillThere.status).toBe("released");
+  });
 });
 
 // --- Cross-owner isolation ---
@@ -449,6 +489,23 @@ describe("Step12 reserves: two-user isolation", () => {
     await expect(releaseObligation(ctx.userB, reserve.id)).rejects.toThrow(
       ObligationNotFoundError,
     );
+  });
+
+  it("user B cannot delete user A's released expense", async () => {
+    await createPlanDirect(ctx.pool, ctx.userA, "2028-02");
+    const { obligation: expense } = await createObligation(ctx.userA, {
+      kind: "ordinary",
+      title: "A protected released expense",
+      plannedCents: 6000,
+      monthKey: "2028-02",
+    });
+    await releaseObligation(ctx.userA, expense.id);
+
+    await expect(deleteReleasedObligation(ctx.userB, expense.id)).rejects.toThrow(
+      ObligationNotFoundError,
+    );
+    const stillThere = await getObligation(ctx.userA, expense.id);
+    expect(stillThere.status).toBe("released");
   });
 
   it("user B cannot see user A's reserves", async () => {

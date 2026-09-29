@@ -45,6 +45,7 @@ import {
   type UpdateObligationInput,
   type UpdateObligationResult,
   type CancelObligationResult,
+  type DeleteObligationResult,
   type ReleaseObligationResult,
   type ObligationFilter,
 } from "./types";
@@ -640,6 +641,88 @@ export async function cancelObligation(
     return mapObligation(row.rows[0], paidCents);
   });
   return { obligation };
+}
+
+/**
+ * Permanently delete a released obligation that has never had a settlement.
+ * Released rows with payment history remain immutable so the history cannot be
+ * erased. The deletion is audited before the row is removed.
+ */
+export async function deleteReleasedObligation(
+  ownerId: OwnerId,
+  obligationId: ObligationId,
+): Promise<DeleteObligationResult> {
+  const id = validateObligationId(obligationId);
+  await withTransaction(async (client) => {
+    const lockResult = await client.query<ObligationRow>(
+      `SELECT id, kind, title, planned_cents, original_month_key,
+              current_month_key, due_date, linked_account_id,
+              origin_template_id, linked_reserve_id, status,
+              created_at, updated_at
+       FROM obligations
+       WHERE owner_id = $1 AND id = $2
+       FOR UPDATE`,
+      [ownerId, id],
+    );
+    if (lockResult.rows.length === 0) {
+      throw new ObligationNotFoundError("Obligation not found");
+    }
+    const existing = lockResult.rows[0];
+    if (existing.status !== "released") {
+      throw new ObligationValidationError(
+        "Only released obligations can be permanently deleted",
+      );
+    }
+
+    const planResult = await client.query<PlanStatusRow>(
+      `SELECT status FROM monthly_plans
+       WHERE owner_id = $1 AND month_key = $2`,
+      [ownerId, existing.current_month_key],
+    );
+    if (planResult.rows[0]?.status === "closed") {
+      throw new ClosedMonthError(
+        `Month ${existing.current_month_key} is closed and cannot be edited`,
+      );
+    }
+
+    const settlementResult = await client.query<{ exists: boolean }>(
+      `SELECT EXISTS(
+         SELECT 1 FROM settlements
+         WHERE owner_id = $1 AND obligation_id = $2
+       ) AS exists`,
+      [ownerId, id],
+    );
+    if (settlementResult.rows[0]?.exists) {
+      throw new SettledHistoryError(
+        "Cannot delete an obligation with payment history; reverse the payments first",
+      );
+    }
+
+    const referenceResult = await client.query<{ exists: boolean }>(
+      `SELECT EXISTS(
+         SELECT 1 FROM obligations
+         WHERE owner_id = $1 AND linked_reserve_id = $2
+       ) AS exists`,
+      [ownerId, id],
+    );
+    if (referenceResult.rows[0]?.exists) {
+      throw new ObligationConflictError(
+        "Cannot delete a reserve that is still linked to an expense",
+      );
+    }
+
+    await client.query(
+      `INSERT INTO audit_log (owner_id, operation_type, entity_type, entity_id, summary)
+       VALUES ($1, 'obligation_delete', 'obligation', $2, $3)`,
+      [ownerId, id, `Deleted released obligation ${existing.title}`],
+    );
+    await client.query(
+      `DELETE FROM obligations
+       WHERE owner_id = $1 AND id = $2`,
+      [ownerId, id],
+    );
+  });
+  return { obligationId: id };
 }
 
 /**

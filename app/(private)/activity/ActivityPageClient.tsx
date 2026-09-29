@@ -22,6 +22,7 @@ import {
   createObligationApi,
   updateObligationApi,
   cancelObligationApi,
+  deleteReleasedObligationApi,
   releaseObligationApi,
   createIncomeApi,
   updateIncomeApi,
@@ -435,11 +436,16 @@ export function ActivityPageClient({
       {/* Detail sheet */}
       {detailItem?.type === "obligation" ? (
         <ObligationDetailSheet
+          key={detailItem.data.id}
           obligation={detailItem.data}
           accounts={activeAccounts}
           onClose={() => setDetailItem(null)}
           onEdit={() => handleEditObligation(detailItem.data)}
           onCanceled={() => {
+            refresh();
+            setDetailItem(null);
+          }}
+          onDeleted={() => {
             refresh();
             setDetailItem(null);
           }}
@@ -1129,6 +1135,7 @@ function ObligationDetailSheet({
   onClose,
   onEdit,
   onCanceled,
+  onDeleted,
   onReleased,
   onPay,
   onReverse,
@@ -1138,6 +1145,7 @@ function ObligationDetailSheet({
   onClose: () => void;
   onEdit: () => void;
   onCanceled: () => void;
+  onDeleted: () => void;
   onReleased: () => void;
   onPay: () => void;
   onReverse: (entry: SettlementHistoryEntry) => void;
@@ -1148,6 +1156,7 @@ function ObligationDetailSheet({
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [confirmRelease, setConfirmRelease] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -1188,6 +1197,19 @@ function ObligationDetailSheet({
     } else {
       setError(result.error);
       setConfirmRelease(false);
+    }
+  }
+
+  async function handleDelete() {
+    setError(null);
+    setPending(true);
+    const result = await deleteReleasedObligationApi(obligation.id);
+    setPending(false);
+    if (result.ok) {
+      onDeleted();
+    } else {
+      setError(result.error);
+      setConfirmDelete(false);
     }
   }
 
@@ -1274,6 +1296,50 @@ function ObligationDetailSheet({
                 </Button>
               ) : null}
             </>
+          ) : null}
+          {obligation.status === "released" ? (
+            obligation.paidCents === 0 ? (
+              confirmDelete ? (
+                <>
+                  <Alert tone="warning">
+                    Η διαγραφή είναι οριστική. Η εγγραφή δεν έχει ιστορικό πληρωμών
+                    και θα αφαιρεθεί από τον μήνα.
+                  </Alert>
+                  <Button
+                    variant="danger"
+                    onClick={handleDelete}
+                    pending={pending}
+                    style={{ width: "100%" }}
+                  >
+                    {pending ? "Διαγραφή…" : "Ναι, διαγραφή"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setConfirmDelete(false)}
+                    style={{ width: "100%" }}
+                  >
+                    Άκυρο διαγραφής
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="danger"
+                  onClick={() => {
+                    setError(null);
+                    setConfirmDelete(true);
+                  }}
+                  style={{ width: "100%" }}
+                >
+                  Διαγραφή εγγραφής
+                </Button>
+              )
+            ) : (
+              <Alert tone="info">
+                Η εγγραφή έχει ιστορικό πληρωμών και δεν μπορεί να διαγραφεί.
+                Μπορείς πρώτα να αντιστρέψεις τις πληρωμές από το ιστορικό.
+              </Alert>
+            )
           ) : null}
           <Button
             type="button"
