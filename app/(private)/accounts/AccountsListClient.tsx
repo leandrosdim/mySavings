@@ -21,6 +21,7 @@ import {
   newIdempotencyKey,
   parseEurosInput,
   todayAthensDate,
+  offlineSubmitGuard,
 } from "@/lib/ui/form-helpers";
 
 type AccountsListClientProps = {
@@ -243,6 +244,11 @@ function CreateAccountSheet({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const onlineCheck = offlineSubmitGuard();
+    if (!onlineCheck.ok) {
+      setError(onlineCheck.error);
+      return;
+    }
 
     const trimmedName = name.trim();
     if (trimmedName.length === 0) {
@@ -420,6 +426,11 @@ function TransferSheet({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const onlineCheck = offlineSubmitGuard();
+    if (!onlineCheck.ok) {
+      setError(onlineCheck.error);
+      return;
+    }
 
     if (!fromId || !toId) {
       setError("Επίλεξε λογαριασμό προορισμού και προέλευσης.");

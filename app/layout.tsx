@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { PWAProvider } from "@/components/pwa/PWAProvider";
 
 export const metadata: Metadata = {
   title: {
@@ -9,13 +10,21 @@ export const metadata: Metadata = {
   description:
     "Προσωπική διαχείριση οικονομικών με προτεραιότητα στην προστασία των αποταμιεύσεων.",
   applicationName: "mySavings",
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: [
-      {
-        url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23059669'/%3E%3Cpath d='M9 17.5l4.5 4.5L23 11' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E",
-        type: "image/svg+xml",
-      },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icons/icon-32.png", sizes: "32x32", type: "image/png" },
     ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    title: "mySavings",
+    statusBarStyle: "default",
   },
   robots: { index: false, follow: false },
 };
@@ -33,7 +42,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="el">
-      <body>{children}</body>
+      <body>
+        <PWAProvider>{children}</PWAProvider>
+      </body>
     </html>
   );
 }

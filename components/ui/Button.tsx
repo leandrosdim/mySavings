@@ -2,10 +2,12 @@
 
 import {
   forwardRef,
+  useEffect,
   type ButtonHTMLAttributes,
   type CSSProperties,
 } from "react";
 import { primaryButton, secondaryButton, dangerButton } from "./styles";
+import { setPwaUpdateBlocked } from "@/components/pwa/UpdateAvailable";
 
 type Variant = "primary" | "secondary" | "danger";
 
@@ -39,6 +41,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     { variant = "primary", pending = false, style, children, disabled, ...rest },
     ref,
   ) {
+    // Mirror pending into the global PWA update-block flag so the update
+    // toast's reload button is disabled while a financial submission is in
+    // flight. Reload is never forced; this only makes the manual reload
+    // button unavailable during entry.
+    useEffect(() => {
+      setPwaUpdateBlocked(pending);
+      return () => {
+        setPwaUpdateBlocked(false);
+      };
+    }, [pending]);
     return (
       <button
         ref={ref}

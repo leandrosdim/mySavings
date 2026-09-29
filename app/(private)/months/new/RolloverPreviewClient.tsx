@@ -10,7 +10,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { Alert } from "@/components/ui/Alert";
 import { cardStyle, stickyControls, dividerStyle } from "@/components/ui/styles";
 import { formatEurEl } from "@/lib/ui/format";
-import { newIdempotencyKey, parseEurosInput } from "@/lib/ui/form-helpers";
+import { newIdempotencyKey, parseEurosInput, offlineSubmitGuard } from "@/lib/ui/form-helpers";
 import {
   fetchRolloverPreview,
   applyRolloverApi,
@@ -525,6 +525,11 @@ function ApplyForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     onError(null);
+    const onlineCheck = offlineSubmitGuard();
+    if (!onlineCheck.ok) {
+      onError(onlineCheck.error);
+      return;
+    }
 
     const parsed = parseEurosInput(targetInput);
     if (!parsed.ok) {

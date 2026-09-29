@@ -25,6 +25,7 @@ import {
   newIdempotencyKey,
   parseEurosInput,
   todayAthensDate,
+  offlineSubmitGuard,
 } from "@/lib/ui/form-helpers";
 
 type AccountDetailClientProps = {
@@ -268,6 +269,11 @@ function RenameSheet({ open, onClose, account, onRenamed }: RenameSheetProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const onlineCheck = offlineSubmitGuard();
+    if (!onlineCheck.ok) {
+      setError(onlineCheck.error);
+      return;
+    }
     const trimmed = name.trim();
     if (trimmed.length === 0) {
       setError("Το όνομα δεν μπορεί να είναι κενό.");
@@ -384,6 +390,11 @@ function RefreshSheet({
     e.preventDefault();
     setError(null);
     setStaleVersion(null);
+    const onlineCheck = offlineSubmitGuard();
+    if (!onlineCheck.ok) {
+      setError(onlineCheck.error);
+      return;
+    }
 
     const parsedResult = parseEurosInput(balanceInput);
     if (!parsedResult.ok) {
@@ -718,6 +729,11 @@ function TransferFromDetailSheet({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const onlineCheck = offlineSubmitGuard();
+    if (!onlineCheck.ok) {
+      setError(onlineCheck.error);
+      return;
+    }
 
     if (!otherId) {
       setError("Επίλεξε λογαριασμό προορισμού.");

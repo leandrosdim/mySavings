@@ -40,3 +40,21 @@ export function todayAthensDate(): string {
   });
   return athens.format(now);
 }
+
+/**
+ * Online-only guard for financial submissions. Returns true and a Greek
+ * error message when the device is known to be offline. The server remains
+ * the source of truth and validates everything regardless; this guard only
+ * prevents firing a request that is certain to fail and avoids any local
+ * retry queue. There is intentionally NO background replay.
+ */
+export function offlineSubmitGuard(): { ok: false; error: string } | { ok: true } {
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    return {
+      ok: false,
+      error:
+        "Χωρίς σύνδεση: η οικονομική εγγραφή απαιτεί σύνδεση στον διακομιστή. Δοκίμασε ξανά όταν επανασυνδεθείς.",
+    };
+  }
+  return { ok: true };
+}

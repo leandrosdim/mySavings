@@ -33,6 +33,7 @@ export default defineConfig({
     },
     include: [
       "tests/unit/**/*.test.ts",
+      "tests/pwa/**/*.test.ts",
       "tests/db/**/*.test.ts",
       "tests/auth/**/*.test.ts",
       "tests/finance/**/*.test.ts",

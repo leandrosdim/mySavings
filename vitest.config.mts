@@ -37,6 +37,7 @@ export default defineConfig({
     },
     include: [
       "tests/unit/**/*.test.ts",
+      "tests/pwa/**/*.test.ts",
       "tests/db/**/*.offline.test.ts",
       "tests/finance/**/*.test.ts",
       "tests/exports/**/*.offline.test.ts",

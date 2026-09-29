@@ -17,7 +17,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { Alert } from "@/components/ui/Alert";
 import { cardStyle, stickyControls, dividerStyle } from "@/components/ui/styles";
 import { formatEurEl } from "@/lib/ui/format";
-import { parseEurosInput } from "@/lib/ui/form-helpers";
+import { parseEurosInput, offlineSubmitGuard } from "@/lib/ui/form-helpers";
 import {
   createObligationApi,
   updateObligationApi,
@@ -699,6 +699,11 @@ function ObligationFormSheet({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const onlineCheck = offlineSubmitGuard();
+    if (!onlineCheck.ok) {
+      setError(onlineCheck.error);
+      return;
+    }
 
     const trimmedTitle = title.trim();
     if (trimmedTitle.length === 0) {
@@ -953,6 +958,11 @@ function IncomeFormSheet({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const onlineCheck = offlineSubmitGuard();
+    if (!onlineCheck.ok) {
+      setError(onlineCheck.error);
+      return;
+    }
 
     const trimmedName = sourceName.trim();
     if (trimmedName.length === 0) {

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { pageMaxWidth } from "@/components/ui/styles";
 import { Alert } from "@/components/ui/Alert";
+import { clearPwaPrivateState } from "@/components/pwa/PWAProvider";
 
 type PrivateShellProps = {
   email: string;
@@ -27,6 +28,11 @@ export function PrivateShell({ email, children }: PrivateShellProps) {
         redirect: "manual",
       });
       if (res.status === 303 || res.status === 0) {
+        // Clear PWA in-memory/update state before navigating so a same-device
+        // A/B sign-in cannot show the previous user's data from client state.
+        // Public static caches remain; authenticated HTML/RSC/API were never
+        // cached by the service worker.
+        await clearPwaPrivateState();
         router.push("/login");
         router.refresh();
         return;
@@ -45,6 +51,7 @@ export function PrivateShell({ email, children }: PrivateShellProps) {
         return;
       }
       // Unexpected status: still try to redirect to login
+      await clearPwaPrivateState();
       router.push("/login");
       router.refresh();
     } catch {

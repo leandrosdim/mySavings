@@ -3,7 +3,13 @@ import { unsealData } from "iron-session";
 
 const SESSION_COOKIE_NAME = "mysavings_session";
 const SESSION_SECRET_KEY = "SESSION_SECRET";
-const PUBLIC_PATHS = new Set(["/", "/login"]);
+const PUBLIC_PATHS = new Set([
+  "/",
+  "/login",
+  "/offline",
+  "/manifest.webmanifest",
+  "/sw.js",
+]);
 
 function readSessionSecret(): string | null {
   const value = process.env[SESSION_SECRET_KEY];

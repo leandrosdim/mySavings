@@ -60,7 +60,7 @@ For UI scope: run actual app, verify health before browser; test 320/390/430px a
 Clean only test-owned fixtures, close owned QA browser sessions and stop owned servers; verify cleanup. Do not kill unrelated processes.
 
 ## Report, independent review and STOP
-Write `docs/reviews/Step16-opencode.md` with scope, files, schema/API decisions, real commands/results, failures/blockers, synthetic fixture cleanup and remaining risks. This is the implementer's self-report, not Hermes approval. For completed Step01 preserve the historical self-report and write a separately named verification addendum instead of rewriting history.
+Write `/home/leandrosdim777/projects/mySavings/docs/reviews/Step16-opencode.md` with scope, files, schema/API decisions, real commands/results, failures/blockers, synthetic fixture cleanup and remaining risks. This is the implementer's self-report, not Hermes approval. For completed Step01 preserve the historical self-report and write a separately named verification addendum instead of rewriting history.
 Hermes independently inspects diff, reruns relevant checks/browser/DB probes and records `docs/reviews/Step16.md`. Do not mark the step complete yourself before this gate. Update roadmap statuses only from verified evidence. STOP after this step; do not run the next prompt. Return a concise handoff and wait for approval.
 
 ## Launch (operator reference; do not recursively launch yourself)

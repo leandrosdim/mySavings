@@ -14,6 +14,7 @@ import { formatEurEl } from "@/lib/ui/format";
 import {
   newIdempotencyKey,
   parseEurosInput,
+  offlineSubmitGuard,
 } from "@/lib/ui/form-helpers";
 import {
   createPlanApi,
@@ -433,6 +434,11 @@ function TargetSheet({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const onlineCheck = offlineSubmitGuard();
+    if (!onlineCheck.ok) {
+      setError(onlineCheck.error);
+      return;
+    }
 
     const parsed = parseEurosInput(targetInput);
     if (!parsed.ok) {
@@ -572,6 +578,11 @@ function TemplateSheet({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const onlineCheck = offlineSubmitGuard();
+    if (!onlineCheck.ok) {
+      setError(onlineCheck.error);
+      return;
+    }
 
     const trimmedName = name.trim();
     if (trimmedName.length === 0) {
