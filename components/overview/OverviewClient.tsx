@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { DashboardOverview } from "@/lib/dashboard";
+import type { MonthlyPlan } from "@/lib/months/types";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { cardStyle, dividerStyle } from "@/components/ui/styles";
@@ -11,6 +12,8 @@ import { formatEurEl, freshnessLabel } from "@/lib/ui/format";
 
 type OverviewClientProps = {
   overview: DashboardOverview;
+  plans: MonthlyPlan[];
+  currentMonth: string;
 };
 
 type Drilldown = "balances" | "income" | "expenses" | "reserves" | "transfers";
@@ -23,7 +26,11 @@ const DRILLDOWN_LABELS_EL: Record<Drilldown, string> = {
   transfers: "Εσωτερικές μεταφορές",
 };
 
-export function OverviewClient({ overview }: OverviewClientProps) {
+export function OverviewClient({
+  overview,
+  plans,
+  currentMonth,
+}: OverviewClientProps) {
   const router = useRouter();
   const [open, setOpen] = useState<Drilldown | null>(null);
 
@@ -37,7 +44,11 @@ export function OverviewClient({ overview }: OverviewClientProps) {
   if (!overview.anyAccountTracked) {
     return (
       <>
-        <Header monthKey={overview.monthKey} />
+        <Header
+          monthKey={overview.monthKey}
+          plans={plans}
+          currentMonth={currentMonth}
+        />
         <div style={cardStyle}>
           <p style={emptyParagraphStyle}>
             Δεν υπάρχουν λογαριασμοί ακόμη. Η επισκόπηση χρειάζεται τουλάχιστον
@@ -55,7 +66,11 @@ export function OverviewClient({ overview }: OverviewClientProps) {
   if (!overview.hasPlan) {
     return (
       <>
-        <Header monthKey={overview.monthKey} />
+        <Header
+          monthKey={overview.monthKey}
+          plans={plans}
+          currentMonth={currentMonth}
+        />
         {overview.hasUnenteredBalance ? <UnenteredBalanceAlert /> : null}
         <div style={cardStyle}>
           <p style={emptyParagraphStyle}>
@@ -76,7 +91,11 @@ export function OverviewClient({ overview }: OverviewClientProps) {
     // yet, so the comparison stays explicitly unavailable.
     return (
       <>
-        <Header monthKey={overview.monthKey} />
+        <Header
+          monthKey={overview.monthKey}
+          plans={plans}
+          currentMonth={currentMonth}
+        />
         <div style={cardStyle}>
           <p style={emptyParagraphStyle}>
             Ο μήνας {overview.monthKey} είναι κλειστός. Η ζωντανή επισκόπηση
@@ -95,7 +114,11 @@ export function OverviewClient({ overview }: OverviewClientProps) {
   if (f.setupIncomplete) {
     return (
       <>
-        <Header monthKey={overview.monthKey} />
+        <Header
+          monthKey={overview.monthKey}
+          plans={plans}
+          currentMonth={currentMonth}
+        />
         {overview.hasUnenteredBalance ? <UnenteredBalanceAlert /> : null}
         {overview.hasStaleBalance ? <StaleBalanceAlert /> : null}
         <div style={cardStyle}>
@@ -127,10 +150,24 @@ export function OverviewClient({ overview }: OverviewClientProps) {
 
   return (
     <>
-      <Header monthKey={overview.monthKey} />
+      <Header
+        monthKey={overview.monthKey}
+        plans={plans}
+        currentMonth={currentMonth}
+      />
 
       {overview.hasStaleBalance ? <StaleBalanceAlert /> : null}
       {hasPendingIncomeCaveat ? <PendingIncomeAlert /> : null}
+
+      {/* Arithmetic clarity card: step-by-step B - E - R + I - S */}
+      <ArithmeticCard
+        balancesTotal={f.balancesTotal}
+        ordinaryUnpaid={f.ordinaryUnpaid}
+        reservedOutstanding={f.reservedOutstanding}
+        pendingIncomeRemaining={f.pendingIncomeRemaining}
+        savingsTarget={target}
+        projectedFreeToSpend={projected}
+      />
 
       {/* Primary card: protected savings target + shortfall */}
       <section style={cardStyle} aria-label="Προστατευμένος στόχος">
@@ -248,7 +285,20 @@ export function OverviewClient({ overview }: OverviewClientProps) {
 
 // --- Sub-components ---
 
-function Header({ monthKey }: { monthKey: string }) {
+function Header({
+  monthKey,
+  plans,
+  currentMonth,
+}: {
+  monthKey: string;
+  plans: MonthlyPlan[];
+  currentMonth: string;
+}) {
+  const router = useRouter();
+  const sortedPlans = [...plans].sort((a, b) =>
+    b.monthKey.localeCompare(a.monthKey),
+  );
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
       <h1
@@ -262,8 +312,42 @@ function Header({ monthKey }: { monthKey: string }) {
         Επισκόπηση
       </h1>
       <p style={{ margin: 0, fontSize: "0.88rem", color: "var(--muted)" }}>
-        {monthKey} · Τρέχων ανοιχτός μήνας
+        {monthKey} · {monthKey === currentMonth ? "Τρέχων μήνας" : "Επιλεγμένος μήνας"}
       </p>
+      <label
+        htmlFor="overview-month"
+        style={{ fontSize: "0.82rem", color: "var(--muted)" }}
+      >
+        Μήνας
+      </label>
+      <select
+        id="overview-month"
+        value={monthKey}
+        onChange={(event) => {
+          const selected = event.target.value;
+          router.push(`/dashboard?month=${encodeURIComponent(selected)}`);
+        }}
+        style={{
+          width: "100%",
+          minHeight: "2.75rem",
+          padding: "0.55rem 0.7rem",
+          borderRadius: "0.5rem",
+          border: "1px solid var(--border)",
+          fontSize: "1rem",
+          backgroundColor: "var(--card)",
+          color: "var(--fg)",
+        }}
+      >
+        {sortedPlans.length === 0 ? (
+          <option value={currentMonth}>{currentMonth} (τρέχων)</option>
+        ) : (
+          sortedPlans.map((plan) => (
+            <option key={plan.id} value={plan.monthKey}>
+              {plan.monthKey}{plan.status === "closed" ? " (κλειστός)" : ""}
+            </option>
+          ))
+        )}
+      </select>
     </div>
   );
 }
@@ -313,6 +397,180 @@ function FormulaRow({ label, value }: { label: string; value: number }) {
         style={{
           fontSize: "0.98rem",
           fontWeight: 700,
+          color: value < 0 ? "#b91c1c" : "var(--fg)",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {formatEurEl(value)}
+      </span>
+    </div>
+  );
+}
+
+function ArithmeticCard({
+  balancesTotal,
+  ordinaryUnpaid,
+  reservedOutstanding,
+  pendingIncomeRemaining,
+  savingsTarget,
+  projectedFreeToSpend,
+}: {
+  balancesTotal: number;
+  ordinaryUnpaid: number;
+  reservedOutstanding: number;
+  pendingIncomeRemaining: number;
+  savingsTarget: number;
+  projectedFreeToSpend: number;
+}) {
+  const totalBeforeTarget =
+    balancesTotal - ordinaryUnpaid - reservedOutstanding + pendingIncomeRemaining;
+  const difference = totalBeforeTarget - savingsTarget;
+
+  return (
+    <section
+      style={cardStyle}
+      aria-label="Αναλυτική πράξη πρόβλεψης"
+    >
+      <h2 style={arithmeticHeadingStyle}>Αναλυτική πράξη</h2>
+      <ArithmeticRow
+        label="Υπόλοιπα τραπεζών (B)"
+        value={balancesTotal}
+      />
+      <ArithmeticRow
+        label="Έξοδα που απομένουν (E)"
+        value={ordinaryUnpaid}
+        sign="−"
+      />
+      <ArithmeticRow
+        label="Δεσμευμένα έξοδα που απομένουν (R)"
+        value={reservedOutstanding}
+        sign="−"
+      />
+      <ArithmeticRow
+        label="Εκκρεμή έσοδα (I)"
+        value={pendingIncomeRemaining}
+        sign="+"
+        hint="Αναμένεται · δεν είναι μετρητά ακόμη"
+      />
+      <hr style={dividerStyle} />
+      <ArithmeticTotalRow
+        label="Σύνολο πριν τον στόχο"
+        formula="B − E − R + I"
+        value={totalBeforeTarget}
+      />
+      <ArithmeticRow
+        label="Στόχος αποταμίευσης (S)"
+        value={savingsTarget}
+        sign="−"
+      />
+      <hr style={dividerStyle} />
+      <div style={arithmeticDifferenceRowStyle}>
+        <span style={mutedLabelStyle}>Διαφορά από στόχο</span>
+        <span
+          style={{
+            fontWeight: 800,
+            fontSize: "1.2rem",
+            color: difference < 0 ? "#b91c1c" : "var(--accent)",
+            whiteSpace: "nowrap",
+          }}
+          aria-label={`Διαφορά από στόχο ${formatEurEl(difference)}`}
+        >
+          {formatEurEl(difference)}
+        </span>
+      </div>
+      <p style={hintStyle}>
+        Ισούται με το προβλεπόμενο διάθεσιμο (B + I − E − R − S):{" "}
+        <strong>{formatEurEl(projectedFreeToSpend)}</strong>
+        {difference === projectedFreeToSpend ? null : (
+          <span style={{ color: "#b91c1c" }}> · ασυμφωνία</span>
+        )}
+      </p>
+    </section>
+  );
+}
+
+function ArithmeticRow({
+  label,
+  value,
+  sign,
+  hint,
+}: {
+  label: string;
+  value: number;
+  sign?: string;
+  hint?: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "baseline",
+        justifyContent: "space-between",
+        gap: "0.5rem",
+        padding: "0.35rem 0",
+        flexWrap: "wrap",
+      }}
+    >
+      <span style={{ fontSize: "0.9rem", color: "var(--fg)" }}>
+        {sign ? (
+          <span
+            aria-hidden
+            style={{ color: "var(--muted)", marginRight: "0.3rem", fontWeight: 700 }}
+          >
+            {sign}
+          </span>
+        ) : null}
+        {label}
+        {hint ? (
+          <span style={{ display: "block", fontSize: "0.75rem", color: "var(--muted)" }}>
+            {hint}
+          </span>
+        ) : null}
+      </span>
+      <span
+        style={{
+          fontSize: "0.98rem",
+          fontWeight: 700,
+          color: value < 0 ? "#b91c1c" : "var(--fg)",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {formatEurEl(value)}
+      </span>
+    </div>
+  );
+}
+
+function ArithmeticTotalRow({
+  label,
+  formula,
+  value,
+}: {
+  label: string;
+  formula: string;
+  value: number;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "baseline",
+        justifyContent: "space-between",
+        gap: "0.5rem",
+        padding: "0.4rem 0",
+        flexWrap: "wrap",
+      }}
+    >
+      <span style={{ fontSize: "0.92rem", fontWeight: 700, color: "var(--fg)" }}>
+        {label}
+        <span style={{ fontSize: "0.75rem", color: "var(--muted)", fontWeight: 400, marginLeft: "0.3rem" }}>
+          {formula}
+        </span>
+      </span>
+      <span
+        style={{
+          fontSize: "1.05rem",
+          fontWeight: 800,
           color: value < 0 ? "#b91c1c" : "var(--fg)",
           whiteSpace: "nowrap",
         }}
@@ -648,6 +906,22 @@ const hintStyle: React.CSSProperties = {
   fontSize: "0.8rem",
   color: "var(--muted)",
   lineHeight: 1.4,
+};
+
+const arithmeticHeadingStyle: React.CSSProperties = {
+  fontSize: "1.1rem",
+  fontWeight: 800,
+  margin: "0 0 0.4rem 0",
+  letterSpacing: "-0.01em",
+};
+
+const arithmeticDifferenceRowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "baseline",
+  justifyContent: "space-between",
+  gap: "0.5rem",
+  flexWrap: "wrap",
+  padding: "0.4rem 0",
 };
 
 const labelRowStyle: React.CSSProperties = {
