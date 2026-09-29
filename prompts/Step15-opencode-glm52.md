@@ -8,7 +8,7 @@ Mode: Execute only the bounded approved scope below.
 This entire file is a ready-to-run prompt, not merely a feature outline. Saving it does not authorize execution. `steps/Step15.md` is canonical; `prompts/Step15-opencode-glm52.md` is its identical execution copy. Keep both synchronized after any preflight amendment.
 
 ## Prerequisites / hard gate
-Step14 approved; agree explicit closed-month correction policy before execution.
+Step14 approved. Decision recorded: closed snapshots are immutable; later corrections are compensating entries in an open period with linkage; no reopening in v1. Execution approved as the required prerequisite before the user's requested Step16 progression.
 Hermes must verify the previous independent gate and current scope before launch. Future implementation is not assumed complete merely because its prompt exists. Unresolved auth choice, credentials, UI language, closing policy or production permissions are blockers only at their named steps, not a reason to invent decisions now.
 
 ## Mandatory operating constraints
