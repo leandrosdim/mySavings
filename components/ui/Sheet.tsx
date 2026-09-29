@@ -23,6 +23,11 @@ const FOCUSABLE_SELECTOR =
 export function Sheet({ open, title, onClose, children, footer }: SheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -35,7 +40,7 @@ export function Sheet({ open, title, onClose, children, footer }: SheetProps) {
     const handleKey = (e: globalThis.KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key === "Tab" && sheet) {
@@ -63,7 +68,7 @@ export function Sheet({ open, title, onClose, children, footer }: SheetProps) {
       document.body.style.overflow = prevOverflow;
       triggerRef.current?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
   if (typeof document === "undefined") return null;
