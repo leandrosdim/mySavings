@@ -38,7 +38,15 @@ function mergeStyle(
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   function Button(
-    { variant = "primary", pending = false, style, children, disabled, ...rest },
+    {
+      variant = "primary",
+      pending = false,
+      style,
+      children,
+      disabled,
+      type = "button",
+      ...rest
+    },
     ref,
   ) {
     // Mirror pending into the global PWA update-block flag so the update
@@ -54,6 +62,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
+        type={type}
         style={mergeStyle(variant, pending, style)}
         disabled={disabled || pending}
         {...rest}
