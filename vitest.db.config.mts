@@ -43,6 +43,8 @@ export default defineConfig({
       "tests/commitments/**/*.test.ts",
       "tests/dashboard/**/*.test.ts",
       "tests/rollover/**/*.test.ts",
+      "tests/history/**/*.test.ts",
+      "tests/exports/**/*.test.ts",
     ],
     exclude: [
       "node_modules/**",

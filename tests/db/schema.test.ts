@@ -255,7 +255,7 @@ describe("Step05 schema: migration idempotence", () => {
       schema: ctx.schema,
     });
     expect(second.applied).toBe(0);
-    expect(second.skipped).toBe(3);
+    expect(second.skipped).toBe(4);
   });
 
   it("creates all expected tables", async () => {

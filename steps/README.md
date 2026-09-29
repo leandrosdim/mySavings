@@ -1,6 +1,6 @@
 # mySavings — registered execution prompts
 
-All 18 steps are written as ready-to-run prompts. Preparation is complete; implementation is NOT. Step01–Step05 and Step11–Step14 are independently verified. Step06–Step10 remain implemented (awaiting independent review). Step15–Step18 remain unexecuted.
+All 18 steps are written as ready-to-run prompts. Preparation is complete; implementation is NOT. Step01–Step05 and Step11–Step15 are independently verified. Step06–Step10 remain implemented (awaiting independent review). Step16–Step18 remain unexecuted.
 
 ## How execution works
 1. User approves one step.
@@ -26,7 +26,7 @@ Canonical files are steps/StepNN.md. Identical execution copies are prompts/Step
 - [Step12: Reserved commitments and tax money](Step12.md) — independently verified; see ../docs/reviews/Step12.md. [Execution copy](../prompts/Step12-opencode-glm52.md).
 - [Step13: Savings-first overview and forecast](Step13.md) — independently verified; see ../docs/reviews/Step13.md. [Execution copy](../prompts/Step13-opencode-glm52.md).
 - [Step14: Month rollover preview and apply](Step14.md) — independently verified; see ../docs/reviews/Step14.md. [Execution copy](../prompts/Step14-opencode-glm52.md).
-- [Step15: Month closing, history and private exports](Step15.md) — registered / awaiting approval and prerequisites. [Execution copy](../prompts/Step15-opencode-glm52.md).
+- [Step15: Month closing, history and private exports](Step15.md) — independently verified; see ../docs/reviews/Step15.md. [Execution copy](../prompts/Step15-opencode-glm52.md).
 - [Step16: Installable privacy-safe PWA](Step16.md) — registered / awaiting approval and prerequisites. [Execution copy](../prompts/Step16-opencode-glm52.md).
 - [Step17: Security, isolation and mobile acceptance](Step17.md) — registered / awaiting approval and prerequisites. [Execution copy](../prompts/Step17-opencode-glm52.md).
 - [Step18: Vercel deployment and production smoke](Step18.md) — registered / awaiting approval and prerequisites. [Execution copy](../prompts/Step18-opencode-glm52.md).

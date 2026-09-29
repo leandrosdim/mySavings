@@ -39,6 +39,7 @@ export default defineConfig({
       "tests/unit/**/*.test.ts",
       "tests/db/**/*.offline.test.ts",
       "tests/finance/**/*.test.ts",
+      "tests/exports/**/*.offline.test.ts",
     ],
     exclude: [
       "node_modules/**",

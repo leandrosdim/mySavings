@@ -58,6 +58,12 @@ import {
   RolloverStalePreviewError,
   RolloverIdempotencyConflictError,
 } from "./rollover/types";
+import {
+  HistoryServiceError,
+  HistoryNotFoundError,
+  HistoryConflictError,
+  ClosedMonthError as HistoryClosedMonthError,
+} from "./history/types";
 import type { OwnerId } from "./months/types";
 
 export const NO_STORE = { "Cache-Control": "no-store" };
@@ -216,13 +222,32 @@ export function mapServiceError(error: unknown): NextResponse {
       { status: 409, headers: NO_STORE },
     );
   }
+  if (error instanceof HistoryNotFoundError) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 404, headers: NO_STORE },
+    );
+  }
+  if (error instanceof HistoryConflictError) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 409, headers: NO_STORE },
+    );
+  }
+  if (error instanceof HistoryClosedMonthError) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 400, headers: NO_STORE },
+    );
+  }
   if (
     error instanceof PlanServiceError ||
     error instanceof TemplateServiceError ||
     error instanceof ObligationServiceError ||
     error instanceof IncomeServiceError ||
     error instanceof SettlementServiceError ||
-    error instanceof RolloverServiceError
+    error instanceof RolloverServiceError ||
+    error instanceof HistoryServiceError
   ) {
     return NextResponse.json(
       { error: error.message },

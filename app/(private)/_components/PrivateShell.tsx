@@ -171,6 +171,22 @@ export function PrivateShell({ email, children }: PrivateShellProps) {
             >
               Δραστηριότητα
             </Link>
+            <Link
+              href="/history"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                minHeight: "2.75rem",
+                padding: "0.4rem 0.8rem",
+                borderRadius: "0.5rem",
+                fontWeight: 600,
+                fontSize: "0.9rem",
+                color: "var(--fg)",
+                textDecoration: "none",
+              }}
+            >
+              Ιστορικό
+            </Link>
           </nav>
         </div>
         <div
