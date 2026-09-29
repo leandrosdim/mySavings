@@ -26,6 +26,7 @@ import {
 
 type PlanPageClientProps = {
   currentMonth: string;
+  selectedMonth: string;
   currentPlan: MonthlyPlan | null;
   plans: MonthlyPlan[];
   templates: RecurringTemplate[];
@@ -39,6 +40,7 @@ const KIND_LABELS_EL: Record<TemplateKind, string> = {
 
 export function PlanPageClient({
   currentMonth,
+  selectedMonth,
   currentPlan,
   plans,
   templates,
@@ -54,6 +56,10 @@ export function PlanPageClient({
   }
 
   const sortedPlans = [...plans].sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+  const hasCurrentMonthPlan = sortedPlans.some(
+    (plan) => plan.monthKey === currentMonth,
+  );
+  const targetClosed = currentPlan?.status === "closed";
 
   return (
     <>
@@ -69,11 +75,44 @@ export function PlanPageClient({
           Μηνιαίο πλάνο
         </h1>
         <p style={{ margin: 0, fontSize: "0.88rem", color: "var(--muted)" }}>
-          {currentMonth}
+          {selectedMonth} · {selectedMonth === currentMonth ? "Τρέχων μήνας" : "Επιλεγμένος μήνας"}
         </p>
+        <label
+          htmlFor="plan-month"
+          style={{ fontSize: "0.82rem", color: "var(--muted)" }}
+        >
+          Μήνας
+        </label>
+        <select
+          id="plan-month"
+          value={selectedMonth}
+          onChange={(event) => {
+            const month = event.target.value;
+            router.push(`/plan?month=${encodeURIComponent(month)}`);
+          }}
+          style={{
+            width: "100%",
+            minHeight: "2.75rem",
+            padding: "0.55rem 0.7rem",
+            borderRadius: "0.5rem",
+            border: "1px solid var(--border)",
+            fontSize: "1rem",
+            backgroundColor: "var(--card)",
+            color: "var(--fg)",
+          }}
+        >
+          {!hasCurrentMonthPlan ? (
+            <option value={currentMonth}>{currentMonth} (τρέχων)</option>
+          ) : null}
+          {sortedPlans.map((plan) => (
+            <option key={plan.id} value={plan.monthKey}>
+              {plan.monthKey}{plan.status === "closed" ? " (κλειστός)" : ""}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* Current month savings target */}
+      {/* Selected month savings target */}
       <div style={cardStyle}>
         <div
           style={{
@@ -100,10 +139,11 @@ export function PlanPageClient({
           </div>
           <Button
             variant="secondary"
+            disabled={targetClosed}
             onClick={() => setShowTarget(true)}
             style={{ flexShrink: 0 }}
           >
-            {currentPlan ? "Αλλαγή" : "Ορισμός"}
+            {targetClosed ? "Κλειστός μήνας" : currentPlan ? "Αλλαγή" : "Ορισμός"}
           </Button>
         </div>
         <p
@@ -117,6 +157,11 @@ export function PlanPageClient({
           Προστατευόμενο σύνολο τέλους μήνα — όχι μηνιαία κατάθεση ή κίνηση
           λογαριασμού.
         </p>
+        {targetClosed ? (
+          <Alert tone="info">
+            Ο επιλεγμένος μήνας είναι κλειστός. Ο στόχος αποταμίευσης δεν αλλάζει.
+          </Alert>
+        ) : null}
       </div>
 
       {/* Templates section */}
@@ -257,7 +302,7 @@ export function PlanPageClient({
             marginBottom: "0.6rem",
           }}
         >
-          Δημιούργησε τις εγγραφές του τρέχοντος μήνα από τα ενεργά πρότυπα.
+          Δημιούργησε τις εγγραφές του επιλεγμένου μήνα από τα ενεργά πρότυπα.
           Ασφαλές για επανάληψη — δεν δημιουργεί διπλότυπες εγγραφές.
         </p>
         <Button
@@ -354,18 +399,24 @@ export function PlanPageClient({
         <Button
           variant="primary"
           onClick={() => setShowTarget(true)}
+          disabled={targetClosed}
           style={{ width: "100%" }}
         >
-          {currentPlan ? "Αλλαγή στόχου αποταμίευσης" : "Ορισμός στόχου αποταμίευσης"}
+          {targetClosed
+            ? "Ο μήνας είναι κλειστός"
+            : currentPlan
+              ? "Αλλαγή στόχου αποταμίευσης"
+              : "Ορισμός στόχου αποταμίευσης"}
         </Button>
       </div>
 
       {/* Target sheet */}
       <TargetSheet
+        key={selectedMonth}
         open={showTarget}
         onClose={() => setShowTarget(false)}
         currentPlan={currentPlan}
-        currentMonth={currentMonth}
+        currentMonth={selectedMonth}
         onSaved={() => {
           refresh();
           setShowTarget(false);
@@ -391,7 +442,7 @@ export function PlanPageClient({
       <GenerateSheet
         open={showGenerate}
         onClose={() => setShowGenerate(false)}
-        currentMonth={currentMonth}
+        currentMonth={selectedMonth}
         onGenerated={() => {
           refresh();
           setShowGenerate(false);

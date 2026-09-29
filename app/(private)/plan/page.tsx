@@ -10,34 +10,47 @@ import type { MonthlyPlan } from "@/lib/months/types";
 import type { RecurringTemplate } from "@/lib/templates/types";
 import { PlanNotFoundError } from "@/lib/months/types";
 
+type PlanPageProps = {
+  searchParams?: Promise<{ month?: string | string[] }>;
+};
+
 export const metadata = {
   title: "Μηνιαίο πλάνο",
 };
 
 export const dynamic = "force-dynamic";
 
-export default async function PlanPage() {
+export default async function PlanPage({
+  searchParams,
+}: PlanPageProps) {
   const session = await verifySession();
   const currentMonth = currentMonthKeyAthens();
+  const plans = await listPlans(session.userId);
+  const params = searchParams ? await searchParams : {};
+  const requestedMonth =
+    typeof params.month === "string" ? params.month : null;
+  const selectedMonth =
+    requestedMonth === currentMonth ||
+    (requestedMonth !== null && plans.some((p) => p.monthKey === requestedMonth))
+      ? requestedMonth
+      : currentMonth;
 
-  let currentPlan: MonthlyPlan | null = null;
+  let selectedPlan: MonthlyPlan | null = null;
   try {
-    currentPlan = await getPlanByMonth(session.userId, currentMonth);
+    selectedPlan = await getPlanByMonth(session.userId, selectedMonth);
   } catch (e) {
-    if (e instanceof PlanNotFoundError) {
-      currentPlan = null;
-    } else {
+    if (!(e instanceof PlanNotFoundError)) {
       throw e;
     }
   }
 
-  const plans = await listPlans(session.userId);
   const templates = await listTemplates(session.userId);
 
   return (
     <PlanPageClient
       currentMonth={currentMonth}
-      currentPlan={currentPlan}
+      selectedMonth={selectedMonth}
+      currentPlan={selectedPlan}
       plans={plans}
       templates={templates}
     />
