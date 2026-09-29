@@ -179,7 +179,7 @@
     {
       "id": "Step17",
       "title": "Security, isolation and mobile acceptance",
-      "status": "registered",
+      "status": "verified",
       "canonical": "steps/Step17.md",
       "prompt": "prompts/Step17-opencode-glm52.md",
       "depends_on": [
