@@ -8,6 +8,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { backdropStyle, sheetStyle } from "./styles";
+import { acquireScrollLock, releaseScrollLock } from "./scroll-lock";
 
 type SheetProps = {
   open: boolean;
@@ -61,11 +62,10 @@ export function Sheet({ open, title, onClose, children, footer }: SheetProps) {
     };
 
     document.addEventListener("keydown", handleKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    acquireScrollLock();
     return () => {
       document.removeEventListener("keydown", handleKey);
-      document.body.style.overflow = prevOverflow;
+      releaseScrollLock();
       triggerRef.current?.focus();
     };
   }, [open]);
